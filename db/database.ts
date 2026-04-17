@@ -15,32 +15,32 @@ function runMigrations(db: SQLite.SQLiteDatabase): void {
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;
 
-    CREATE TABLE IF NOT EXISTS clientes (
+    CREATE TABLE IF NOT EXISTS clients (
       id          TEXT PRIMARY KEY,
-      nombre      TEXT NOT NULL,
-      telefono    TEXT,
-      notas       TEXT,
-      activo      INTEGER NOT NULL DEFAULT 1,
+      name        TEXT NOT NULL,
+      phone       TEXT,
+      notes       TEXT,
+      active      INTEGER NOT NULL DEFAULT 1,
       created_at  TEXT NOT NULL,
       updated_at  TEXT NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS cobros (
-      id                TEXT PRIMARY KEY,
-      cliente_id        TEXT NOT NULL REFERENCES clientes(id),
-      concepto          TEXT NOT NULL,
-      monto             INTEGER NOT NULL,
-      fecha_vencimiento TEXT NOT NULL,
-      estado            TEXT NOT NULL DEFAULT 'pendiente',
-      metodo_pago       TEXT,
-      nota_pago         TEXT,
-      pagado_at         TEXT,
-      created_at        TEXT NOT NULL,
-      updated_at        TEXT NOT NULL
+    CREATE TABLE IF NOT EXISTS charges (
+      id              TEXT PRIMARY KEY,
+      client_id       TEXT NOT NULL REFERENCES clients(id),
+      concept         TEXT NOT NULL,
+      amount          INTEGER NOT NULL,
+      due_date        TEXT NOT NULL,
+      status          TEXT NOT NULL DEFAULT 'pending',
+      payment_method  TEXT,
+      payment_note    TEXT,
+      paid_at         TEXT,
+      created_at      TEXT NOT NULL,
+      updated_at      TEXT NOT NULL
     );
 
-    CREATE INDEX IF NOT EXISTS idx_cobros_cliente    ON cobros(cliente_id);
-    CREATE INDEX IF NOT EXISTS idx_cobros_estado     ON cobros(estado);
-    CREATE INDEX IF NOT EXISTS idx_cobros_vencimiento ON cobros(fecha_vencimiento);
+    CREATE INDEX IF NOT EXISTS idx_charges_client   ON charges(client_id);
+    CREATE INDEX IF NOT EXISTS idx_charges_status   ON charges(status);
+    CREATE INDEX IF NOT EXISTS idx_charges_due_date ON charges(due_date);
   `);
 }

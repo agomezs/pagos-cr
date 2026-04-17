@@ -1,71 +1,70 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
-import { marcarVencidos, obtenerResumen, listarCobros, crearCobro } from "../db/cobros";
-import { crearCliente, listarClientes } from "../db/clientes";
+import { markOverdue, getSummary, listCharges, createCharge } from "../db/charges";
+import { createClient, listClients } from "../db/clients";
 import { getDb } from "../db/database";
-import { formatColones, formatFecha } from "../lib/format";
-import type { Cobro, EstadoCobro, Resumen } from "../lib/types";
+import { formatColones, formatDate } from "../lib/format";
+import type { Charge, ChargeStatus, Summary } from "../lib/types";
 
 // ---------------------------------------------------------------------------
 // Seed helper — inserts demo data on first run
 // ---------------------------------------------------------------------------
 function seedIfEmpty() {
-  const clientes = listarClientes();
-  if (clientes.length > 0) return;
+  const clients = listClients();
+  if (clients.length > 0) return;
 
-  const now = new Date().toISOString();
+  const c1 = { id: "c1", name: "Ana Rodríguez", phone: "88001234", notes: null };
+  const c2 = { id: "c2", name: "Luis Pérez", phone: "88005678", notes: null };
+  const c3 = { id: "c3", name: "María Castro", phone: null, notes: null };
 
-  const c1 = { id: "c1", nombre: "Ana Rodríguez", telefono: "88001234", notas: null };
-  const c2 = { id: "c2", nombre: "Luis Pérez", telefono: "88005678", notas: null };
-  const c3 = { id: "c3", nombre: "María Castro", telefono: null, notas: null };
+  createClient(c1);
+  createClient(c2);
+  createClient(c3);
 
-  crearCliente(c1);
-  crearCliente(c2);
-  crearCliente(c3);
-
-  crearCobro({ id: "co1", cliente_id: "c1", concepto: "Mensualidad mayo", monto: 35000, fecha_vencimiento: "2026-05-01" });
-  crearCobro({ id: "co2", cliente_id: "c2", concepto: "Mensualidad mayo", monto: 35000, fecha_vencimiento: "2026-05-01" });
-  crearCobro({ id: "co3", cliente_id: "c3", concepto: "Mensualidad mayo", monto: 40000, fecha_vencimiento: "2026-05-15" });
-  crearCobro({ id: "co4", cliente_id: "c1", concepto: "Mensualidad abril", monto: 35000, fecha_vencimiento: "2026-04-01" });
-  crearCobro({ id: "co5", cliente_id: "c3", concepto: "Mensualidad marzo", monto: 40000, fecha_vencimiento: "2026-03-01" });
-  crearCobro({ id: "co6", cliente_id: "c2", concepto: "Mensualidad abril", monto: 35000, fecha_vencimiento: "2026-04-01" });
+  createCharge({ id: "co1", client_id: "c1", concept: "Mensualidad mayo", amount: 35000, due_date: "2026-05-01" });
+  createCharge({ id: "co2", client_id: "c2", concept: "Mensualidad mayo", amount: 35000, due_date: "2026-05-01" });
+  createCharge({ id: "co3", client_id: "c3", concept: "Mensualidad mayo", amount: 40000, due_date: "2026-05-15" });
+  createCharge({ id: "co4", client_id: "c1", concept: "Mensualidad abril", amount: 35000, due_date: "2026-04-01" });
+  createCharge({ id: "co5", client_id: "c3", concept: "Mensualidad marzo", amount: 40000, due_date: "2026-03-01" });
+  createCharge({ id: "co6", client_id: "c2", concept: "Mensualidad abril", amount: 35000, due_date: "2026-04-01" });
 
   const db = getDb();
+  const now = new Date().toISOString();
   db.runSync(
-    `UPDATE cobros SET estado='pagado', metodo_pago='sinpe', pagado_at='2026-04-02', updated_at=? WHERE id='co6'`,
+    `UPDATE charges SET status='paid', payment_method='sinpe', paid_at='2026-04-02', updated_at=? WHERE id='co6'`,
     now,
   );
 }
 
 // ---------------------------------------------------------------------------
-// ResumenPanel
+// SummaryPanel
 // ---------------------------------------------------------------------------
-type StatCardProps = { label: string; cantidad: number; monto: number; color: string };
+type StatCardProps = { label: string; count: number; amount: number; color: string };
 
-function StatCard({ label, cantidad, monto, color }: StatCardProps) {
+function StatCard({ label, count, amount, color }: StatCardProps) {
   return (
     <View className={`flex-1 rounded-2xl p-4 gap-1 ${color}`}>
       <Text className="text-xs font-semibold text-white/80 uppercase tracking-wide">{label}</Text>
-      <Text className="text-2xl font-bold text-white">{formatColones(monto)}</Text>
-      <Text className="text-xs text-white/70">{cantidad} cobro{cantidad !== 1 ? "s" : ""}</Text>
+      <Text className="text-2xl font-bold text-white">{formatColones(amount)}</Text>
+      <Text className="text-xs text-white/70">{count} charge{count !== 1 ? "s" : ""}</Text>
     </View>
   );
 }
 
-function ResumenPanel({ resumen }: { resumen: Resumen }) {
+function SummaryPanel({ summary }: { summary: Summary }) {
   return (
     <View className="px-4 pt-4 pb-2 gap-3">
       <Text className="text-xl font-bold text-gray-900">Dashboard</Text>
       <View className="flex-row gap-3">
-        <StatCard label="Pendiente" cantidad={resumen.cantidadPendientes} monto={resumen.totalPendiente} color="bg-blue-500" />
-        <StatCard label="Vencido" cantidad={resumen.cantidadVencidos} monto={resumen.totalVencido} color="bg-red-500" />
+        <StatCard label="Pending" count={summary.pendingCount} amount={summary.totalPending} color="bg-blue-500" />
+        <StatCard label="Overdue" count={summary.overdueCount} amount={summary.totalOverdue} color="bg-red-500" />
       </View>
       <View className="flex-row gap-3">
-        <StatCard label="Cobrado" cantidad={resumen.cantidadPagados} monto={resumen.totalCobrado} color="bg-green-600" />
+        <StatCard label="Paid" count={summary.paidCount} amount={summary.totalPaid} color="bg-green-600" />
         <View className="flex-1 rounded-2xl p-4 bg-gray-100 gap-1 justify-center">
-          <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total por cobrar</Text>
+          <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total owed</Text>
           <Text className="text-xl font-bold text-gray-800">
-            {formatColones(resumen.totalPendiente + resumen.totalVencido)}
+            {formatColones(summary.totalPending + summary.totalOverdue)}
           </Text>
         </View>
       </View>
@@ -74,21 +73,21 @@ function ResumenPanel({ resumen }: { resumen: Resumen }) {
 }
 
 // ---------------------------------------------------------------------------
-// FiltroBar
+// FilterBar
 // ---------------------------------------------------------------------------
-const FILTROS: { label: string; value: EstadoCobro | null }[] = [
-  { label: "Todos", value: null },
-  { label: "Pendientes", value: "pendiente" },
-  { label: "Vencidos", value: "vencido" },
-  { label: "Pagados", value: "pagado" },
+const FILTERS: { label: string; value: ChargeStatus | null }[] = [
+  { label: "All", value: null },
+  { label: "Pending", value: "pending" },
+  { label: "Overdue", value: "overdue" },
+  { label: "Paid", value: "paid" },
 ];
 
-function FiltroBar({
-  activo,
+function FilterBar({
+  active,
   onChange,
 }: {
-  activo: EstadoCobro | null;
-  onChange: (v: EstadoCobro | null) => void;
+  active: ChargeStatus | null;
+  onChange: (v: ChargeStatus | null) => void;
 }) {
   return (
     <ScrollView
@@ -96,8 +95,8 @@ function FiltroBar({
       showsHorizontalScrollIndicator={false}
       contentContainerClassName="px-4 py-2 gap-2"
     >
-      {FILTROS.map((f) => {
-        const selected = activo === f.value;
+      {FILTERS.map((f) => {
+        const selected = active === f.value;
         return (
           <Pressable
             key={String(f.value)}
@@ -117,25 +116,25 @@ function FiltroBar({
 }
 
 // ---------------------------------------------------------------------------
-// CobroCard
+// ChargeCard
 // ---------------------------------------------------------------------------
-const ESTADO_STYLE: Record<EstadoCobro, { badge: string; text: string; label: string }> = {
-  pendiente: { badge: "bg-blue-100", text: "text-blue-700", label: "Pendiente" },
-  vencido:   { badge: "bg-red-100",  text: "text-red-700",  label: "Vencido" },
-  pagado:    { badge: "bg-green-100", text: "text-green-700", label: "Pagado" },
+const STATUS_STYLE: Record<ChargeStatus, { badge: string; text: string; label: string }> = {
+  pending: { badge: "bg-blue-100", text: "text-blue-700", label: "Pending" },
+  overdue: { badge: "bg-red-100",  text: "text-red-700",  label: "Overdue" },
+  paid:    { badge: "bg-green-100", text: "text-green-700", label: "Paid" },
 };
 
-function CobroCard({ cobro }: { cobro: Cobro }) {
-  const style = ESTADO_STYLE[cobro.estado];
+function ChargeCard({ charge }: { charge: Charge }) {
+  const style = STATUS_STYLE[charge.status];
   return (
     <View className="mx-4 mb-3 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
       <View className="flex-row items-start justify-between gap-2">
         <View className="flex-1 gap-0.5">
           <Text className="text-base font-semibold text-gray-900" numberOfLines={1}>
-            {cobro.cliente_nombre}
+            {charge.client_name}
           </Text>
           <Text className="text-sm text-gray-500" numberOfLines={1}>
-            {cobro.concepto}
+            {charge.concept}
           </Text>
         </View>
         <View className={`px-2.5 py-1 rounded-full ${style.badge}`}>
@@ -146,15 +145,15 @@ function CobroCard({ cobro }: { cobro: Cobro }) {
       <View className="mt-3 flex-row items-end justify-between">
         <View className="gap-0.5">
           <Text className="text-xs text-gray-400">
-            {cobro.estado === "pagado" && cobro.pagado_at
-              ? `Pagado el ${formatFecha(cobro.pagado_at)}`
-              : `Vence ${formatFecha(cobro.fecha_vencimiento)}`}
+            {charge.status === "paid" && charge.paid_at
+              ? `Paid on ${formatDate(charge.paid_at)}`
+              : `Due ${formatDate(charge.due_date)}`}
           </Text>
-          {cobro.metodo_pago && (
-            <Text className="text-xs text-gray-400 capitalize">{cobro.metodo_pago}</Text>
+          {charge.payment_method && (
+            <Text className="text-xs text-gray-400 capitalize">{charge.payment_method}</Text>
           )}
         </View>
-        <Text className="text-lg font-bold text-gray-900">{formatColones(cobro.monto)}</Text>
+        <Text className="text-lg font-bold text-gray-900">{formatColones(charge.amount)}</Text>
       </View>
     </View>
   );
@@ -164,38 +163,38 @@ function CobroCard({ cobro }: { cobro: Cobro }) {
 // Dashboard
 // ---------------------------------------------------------------------------
 export default function Dashboard() {
-  const [resumen, setResumen] = useState<Resumen>({
-    totalPendiente: 0,
-    totalVencido: 0,
-    totalCobrado: 0,
-    cantidadPendientes: 0,
-    cantidadVencidos: 0,
-    cantidadPagados: 0,
+  const [summary, setSummary] = useState<Summary>({
+    totalPending: 0,
+    totalOverdue: 0,
+    totalPaid: 0,
+    pendingCount: 0,
+    overdueCount: 0,
+    paidCount: 0,
   });
-  const [cobros, setCobros] = useState<Cobro[]>([]);
-  const [filtroEstado, setFiltroEstado] = useState<EstadoCobro | null>(null);
+  const [charges, setCharges] = useState<Charge[]>([]);
+  const [statusFilter, setStatusFilter] = useState<ChargeStatus | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const cargar = useCallback(() => {
-    marcarVencidos();
-    setResumen(obtenerResumen());
-    setCobros(listarCobros({ estado: filtroEstado }));
-  }, [filtroEstado]);
+  const load = useCallback(() => {
+    markOverdue();
+    setSummary(getSummary());
+    setCharges(listCharges({ status: statusFilter }));
+  }, [statusFilter]);
 
   useEffect(() => {
     seedIfEmpty();
-    cargar();
-  }, [cargar]);
+    load();
+  }, [load]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    cargar();
+    load();
     setRefreshing(false);
-  }, [cargar]);
+  }, [load]);
 
   useEffect(() => {
-    cargar();
-  }, [filtroEstado, cargar]);
+    load();
+  }, [statusFilter, load]);
 
   return (
     <ScrollView
@@ -203,23 +202,23 @@ export default function Dashboard() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       stickyHeaderIndices={[1]}
     >
-      <ResumenPanel resumen={resumen} />
+      <SummaryPanel summary={summary} />
 
       <View className="bg-gray-50">
-        <FiltroBar activo={filtroEstado} onChange={setFiltroEstado} />
+        <FilterBar active={statusFilter} onChange={setStatusFilter} />
       </View>
 
       <View className="pt-2 pb-8">
-        {cobros.length === 0 ? (
+        {charges.length === 0 ? (
           <View className="items-center py-16 gap-2">
             <Text className="text-4xl">📋</Text>
-            <Text className="text-base font-medium text-gray-500">Sin cobros</Text>
+            <Text className="text-base font-medium text-gray-500">No charges</Text>
             <Text className="text-sm text-gray-400">
-              {filtroEstado ? `No hay cobros ${filtroEstado}s` : "No hay cobros registrados"}
+              {statusFilter ? `No ${statusFilter} charges` : "No charges registered"}
             </Text>
           </View>
         ) : (
-          cobros.map((c) => <CobroCard key={c.id} cobro={c} />)
+          charges.map((c) => <ChargeCard key={c.id} charge={c} />)
         )}
       </View>
     </ScrollView>
