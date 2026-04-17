@@ -141,19 +141,15 @@ export default function ClientDetailScreen() {
   return (
     <ScrollView className="flex-1 bg-gray-50" contentContainerClassName="p-4 gap-6">
       {/* Header */}
-      <ScreenHeader
-        title=""
-        onBack={() => router.back()}
-        right={
-          <Pressable onPress={() => router.push(`/clients/${id}/edit`)} hitSlop={12}>
-            <Text className="text-blue-600 text-base font-medium">Editar</Text>
-          </Pressable>
-        }
-      />
+      <ScreenHeader title="" onBack={() => router.back()} />
 
       {/* Info card */}
+      <Pressable onPress={() => router.push(`/clients/${id}/edit`)} className="active:opacity-70">
       <View className="bg-white rounded-2xl px-4 py-4 border border-gray-100 gap-3">
-        <Text className="text-2xl font-bold text-gray-900">{client.name}</Text>
+        <View className="flex-row items-center justify-between">
+          <Text className="text-2xl font-bold text-gray-900">{client.name}</Text>
+          <Text className="text-xl text-gray-300">›</Text>
+        </View>
         {client.phone ? (
           <View className="gap-0.5">
             <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Teléfono</Text>
@@ -167,6 +163,7 @@ export default function ClientDetailScreen() {
           </View>
         ) : null}
       </View>
+      </Pressable>
 
       {/* Charges section */}
       <View className="gap-3">
