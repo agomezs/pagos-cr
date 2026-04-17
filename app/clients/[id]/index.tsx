@@ -2,12 +2,52 @@ import { useCallback, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { getClient, deactivateClient } from "../../../db/clients";
-import type { Client } from "../../../lib/types";
+import { listChargesByClient } from "../../../db/charges";
+import { formatColones, formatDate } from "../../../lib/format";
+import type { Client, Charge } from "../../../lib/types";
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: "Pendiente",
+  overdue: "Vencido",
+  paid: "Pagado",
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  pending: "text-yellow-600",
+  overdue: "text-red-600",
+  paid: "text-green-600",
+};
+
+const STATUS_BG: Record<string, string> = {
+  pending: "bg-yellow-50 border-yellow-100",
+  overdue: "bg-red-50 border-red-100",
+  paid: "bg-green-50 border-green-100",
+};
+
+function ChargeRow({ charge }: { charge: Charge }) {
+  return (
+    <View className={`rounded-xl px-4 py-3 border gap-1 ${STATUS_BG[charge.status] ?? "bg-white border-gray-100"}`}>
+      <View className="flex-row items-center justify-between">
+        <Text className="text-base font-semibold text-gray-900 flex-1 mr-2" numberOfLines={1}>
+          {charge.concept}
+        </Text>
+        <Text className={`text-sm font-semibold ${STATUS_COLOR[charge.status] ?? "text-gray-600"}`}>
+          {STATUS_LABEL[charge.status] ?? charge.status}
+        </Text>
+      </View>
+      <View className="flex-row items-center justify-between">
+        <Text className="text-sm text-gray-500">Vence: {formatDate(charge.due_date)}</Text>
+        <Text className="text-sm font-medium text-gray-700">{formatColones(charge.amount)}</Text>
+      </View>
+    </View>
+  );
+}
 
 export default function ClientDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [client, setClient] = useState<Client | null>(null);
+  const [charges, setCharges] = useState<Charge[]>([]);
 
   const load = useCallback(() => {
     const c = getClient(id);
@@ -16,6 +56,7 @@ export default function ClientDetailScreen() {
       return;
     }
     setClient(c);
+    setCharges(listChargesByClient(id));
   }, [id]);
 
   useFocusEffect(load);
@@ -69,13 +110,37 @@ export default function ClientDetailScreen() {
         ) : null}
       </View>
 
-      {/* Charges placeholder — filled in Slice 3 */}
-      <View className="gap-2">
-        <Text className="text-base font-semibold text-gray-700">Cobros</Text>
-        <View className="bg-white rounded-2xl px-4 py-8 border border-gray-100 items-center gap-2">
-          <Text className="text-3xl">📋</Text>
-          <Text className="text-sm text-gray-400">Sin cobros registrados</Text>
+      {/* Charges section */}
+      <View className="gap-3">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-base font-semibold text-gray-700">
+            Cobros {charges.length > 0 ? `(${charges.length})` : ""}
+          </Text>
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/charges/new",
+                params: { client_id: id, client_name: client.name },
+              })
+            }
+            className="bg-blue-600 px-3 py-1.5 rounded-lg active:opacity-70"
+          >
+            <Text className="text-white text-sm font-semibold">+ Nuevo cobro</Text>
+          </Pressable>
         </View>
+
+        {charges.length === 0 ? (
+          <View className="bg-white rounded-2xl px-4 py-8 border border-gray-100 items-center gap-2">
+            <Text className="text-3xl">📋</Text>
+            <Text className="text-sm text-gray-400">Sin cobros registrados</Text>
+          </View>
+        ) : (
+          <View className="gap-2">
+            {charges.map((charge) => (
+              <ChargeRow key={charge.id} charge={charge} />
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Danger zone */}

@@ -77,6 +77,22 @@ export function listCharges(filters: ChargeFilters = {}): Charge[] {
   return rows;
 }
 
+/**
+ * Returns all charges for a specific client, ordered by due_date ASC.
+ */
+export function listChargesByClient(client_id: string): Charge[] {
+  const db = getDb();
+  const rows = db.getAllSync<Charge>(
+    `SELECT c.*, cl.name as client_name
+     FROM charges c
+     JOIN clients cl ON c.client_id = cl.id
+     WHERE c.client_id = ?
+     ORDER BY c.due_date ASC`,
+    client_id,
+  );
+  return rows;
+}
+
 export function createCharge(charge: Omit<Charge, 'status' | 'payment_method' | 'payment_note' | 'paid_at' | 'created_at' | 'updated_at' | 'client_name'>): void {
   const db = getDb();
   const now = new Date().toISOString();
