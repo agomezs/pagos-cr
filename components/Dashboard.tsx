@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
-import { useRouter } from "expo-router";
 import { markOverdue, getSummary, listCharges, createCharge } from "../db/charges";
 import { createClient, listClients } from "../db/clients";
 import { getDb } from "../db/database";
@@ -164,7 +163,6 @@ function ChargeCard({ charge }: { charge: Charge }) {
 // Dashboard
 // ---------------------------------------------------------------------------
 export default function Dashboard() {
-  const router = useRouter();
   const [summary, setSummary] = useState<Summary>({
     totalPending: 0,
     totalOverdue: 0,
@@ -225,14 +223,6 @@ export default function Dashboard() {
           )}
         </View>
       </ScrollView>
-
-      {/* FAB — nuevo cliente */}
-      <Pressable
-        onPress={() => router.push("/clients/new")}
-        className="absolute bottom-8 right-6 bg-blue-600 w-14 h-14 rounded-full items-center justify-center shadow-lg"
-      >
-        <Text className="text-white text-3xl font-light leading-none">+</Text>
-      </Pressable>
     </View>
   );
 }
