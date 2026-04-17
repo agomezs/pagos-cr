@@ -42,5 +42,13 @@ function runMigrations(db: SQLite.SQLiteDatabase): void {
     CREATE INDEX IF NOT EXISTS idx_charges_client   ON charges(client_id);
     CREATE INDEX IF NOT EXISTS idx_charges_status   ON charges(status);
     CREATE INDEX IF NOT EXISTS idx_charges_due_date ON charges(due_date);
+
+    CREATE TABLE IF NOT EXISTS charge_templates (
+      id          TEXT PRIMARY KEY,
+      concept     TEXT NOT NULL,
+      amount      INTEGER NOT NULL,
+      created_at  TEXT NOT NULL,
+      updated_at  TEXT NOT NULL
+    );
   `);
 }

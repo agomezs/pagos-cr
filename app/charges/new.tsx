@@ -12,7 +12,10 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { createCharge } from "../../db/charges";
+import { listTemplates } from "../../db/chargeTemplates";
 import { formatDate } from "../../lib/format";
+import type { ChargeTemplate } from "../../lib/types";
+import TemplatePickerModal from "../../components/TemplatePickerModal";
 
 export default function NewChargeScreen() {
   const { client_id, client_name } = useLocalSearchParams<{
@@ -25,7 +28,21 @@ export default function NewChargeScreen() {
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templates, setTemplates] = useState<ChargeTemplate[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  function openTemplatePicker() {
+    setTemplates(listTemplates());
+    setShowTemplates(true);
+  }
+
+  function applyTemplate(tpl: ChargeTemplate) {
+    setConcept(tpl.concept);
+    setAmount(String(tpl.amount));
+    setError(null);
+    setShowTemplates(false);
+  }
 
   function toISO(date: Date): string {
     const y = date.getFullYear();
@@ -85,6 +102,15 @@ export default function NewChargeScreen() {
             <Text className="text-base text-gray-600">{client_name ?? client_id}</Text>
           </View>
         </View>
+
+        {/* Template picker trigger */}
+        <Pressable
+          onPress={openTemplatePicker}
+          className="border border-blue-200 bg-blue-50 rounded-xl px-4 py-3 flex-row items-center justify-between active:opacity-70"
+        >
+          <Text className="text-blue-700 text-sm font-medium">Usar plantilla</Text>
+          <Text className="text-blue-400 text-sm">›</Text>
+        </Pressable>
 
         {/* Concepto */}
         <View className="gap-1.5">
@@ -182,6 +208,13 @@ export default function NewChargeScreen() {
           </Text>
         </Pressable>
       </ScrollView>
+
+      <TemplatePickerModal
+        visible={showTemplates}
+        templates={templates}
+        onSelect={applyTemplate}
+        onClose={() => setShowTemplates(false)}
+      />
     </KeyboardAvoidingView>
   );
 }

@@ -42,3 +42,11 @@ export type ChargeFilters = {
   date_from?: string | null;
   date_to?: string | null;
 };
+
+export type ChargeTemplate = {
+  id: string;
+  concept: string;
+  amount: number;
+  created_at: string;
+  updated_at: string;
+};
