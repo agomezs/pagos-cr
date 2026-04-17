@@ -76,11 +76,11 @@ function SummaryPanel({ summary }: { summary: Summary }) {
 // ---------------------------------------------------------------------------
 // FilterBar
 // ---------------------------------------------------------------------------
-const FILTERS: { label: string; value: ChargeStatus | null }[] = [
-  { label: "All", value: null },
-  { label: "Pending", value: "pending" },
-  { label: "Overdue", value: "overdue" },
-  { label: "Paid", value: "paid" },
+const FILTERS: { label: string; value: ChargeStatus | null; color: string; selectedBg: string }[] = [
+  { label: "Todos",     value: null,      color: "border-gray-300 bg-white",        selectedBg: "bg-gray-900 border-gray-900" },
+  { label: "Pendiente", value: "pending", color: "border-blue-200 bg-blue-50",      selectedBg: "bg-blue-600 border-blue-600" },
+  { label: "Vencido",   value: "overdue", color: "border-red-200 bg-red-50",        selectedBg: "bg-red-600 border-red-600" },
+  { label: "Pagado",    value: "paid",    color: "border-green-200 bg-green-50",    selectedBg: "bg-green-600 border-green-600" },
 ];
 
 function FilterBar({
@@ -94,7 +94,7 @@ function FilterBar({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerClassName="px-4 py-2 gap-2"
+      contentContainerClassName="px-4 py-3 gap-2"
     >
       {FILTERS.map((f) => {
         const selected = active === f.value;
@@ -102,11 +102,9 @@ function FilterBar({
           <Pressable
             key={String(f.value)}
             onPress={() => onChange(f.value)}
-            className={`px-4 py-1.5 rounded-full border ${
-              selected ? "bg-gray-900 border-gray-900" : "bg-white border-gray-200"
-            }`}
+            className={`px-5 py-2.5 rounded-full border ${selected ? f.selectedBg : f.color} active:opacity-70`}
           >
-            <Text className={`text-sm font-medium ${selected ? "text-white" : "text-gray-600"}`}>
+            <Text className={`text-base font-semibold ${selected ? "text-white" : "text-gray-700"}`}>
               {f.label}
             </Text>
           </Pressable>
