@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { markOverdue, getSummary, listCharges, createCharge } from "../db/charges";
 import { createClient, listClients } from "../db/clients";
@@ -125,9 +126,13 @@ const STATUS_STYLE: Record<ChargeStatus, { badge: string; text: string; label: s
 };
 
 function ChargeCard({ charge }: { charge: Charge }) {
+  const router = useRouter();
   const style = STATUS_STYLE[charge.status];
   return (
-    <View className="mx-4 mb-3 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+    <Pressable
+      onPress={() => router.push(`/clients/${charge.client_id}`)}
+      className="mx-4 mb-3 bg-white rounded-2xl p-4 shadow-sm border border-gray-100 active:opacity-70"
+    >
       <View className="flex-row items-start justify-between gap-2">
         <View className="flex-1 gap-0.5">
           <Text className="text-base font-semibold text-gray-900" numberOfLines={1}>
@@ -155,7 +160,7 @@ function ChargeCard({ charge }: { charge: Charge }) {
         </View>
         <Text className="text-lg font-bold text-gray-900">{formatColones(charge.amount)}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -183,18 +188,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     seedIfEmpty();
-    load();
-  }, [load]);
+  }, []);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     load();
     setRefreshing(false);
   }, [load]);
-
-  useEffect(() => {
-    load();
-  }, [statusFilter, load]);
 
   return (
     <View className="flex-1">

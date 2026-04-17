@@ -109,6 +109,19 @@ export function createCharge(charge: Omit<Charge, 'status' | 'payment_method' | 
   );
 }
 
+export function unmarkPaid(id: string): void {
+  const db = getDb();
+  const now = new Date().toISOString();
+  db.runSync(
+    `UPDATE charges
+     SET status = CASE WHEN due_date < date('now') THEN 'overdue' ELSE 'pending' END,
+         payment_method = NULL, payment_note = NULL, paid_at = NULL, updated_at = ?
+     WHERE id = ? AND status = 'paid'`,
+    now,
+    id,
+  );
+}
+
 export function markPaid(
   id: string,
   payment_method: 'sinpe' | 'transfer' | 'cash',

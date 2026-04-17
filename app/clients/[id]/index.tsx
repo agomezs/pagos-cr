@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import { useLocalSearchParams, useRouter, useFocusEffect, Link } from "expo-router";
 import { getClient, deactivateClient } from "../../../db/clients";
-import { listChargesByClient } from "../../../db/charges";
+import { listChargesByClient, unmarkPaid } from "../../../db/charges";
 import { formatColones, formatDate } from "../../../lib/format";
 import type { Client, Charge } from "../../../lib/types";
 
@@ -24,8 +24,9 @@ const STATUS_BG: Record<string, string> = {
   paid: "bg-green-50 border-green-100",
 };
 
-function ChargeRow({ charge }: { charge: Charge }) {
-  return (
+function ChargeRow({ charge, onUnmark }: { charge: Charge; onUnmark: (id: string) => void }) {
+  const canPay = charge.status === "pending" || charge.status === "overdue";
+  const inner = (
     <View className={`rounded-xl px-4 py-3 border gap-1 ${STATUS_BG[charge.status] ?? "bg-white border-gray-100"}`}>
       <View className="flex-row items-center justify-between">
         <Text className="text-base font-semibold text-gray-900 flex-1 mr-2" numberOfLines={1}>
@@ -39,7 +40,44 @@ function ChargeRow({ charge }: { charge: Charge }) {
         <Text className="text-sm text-gray-500">Vence: {formatDate(charge.due_date)}</Text>
         <Text className="text-sm font-medium text-gray-700">{formatColones(charge.amount)}</Text>
       </View>
+      {canPay && (
+        <Text className="text-xs text-blue-500 font-medium mt-0.5">Tocar para registrar pago →</Text>
+      )}
+      {charge.status === "paid" && (
+        <View className="flex-row items-center justify-between mt-0.5">
+          <Text className="text-xs text-gray-400">
+            {charge.paid_at ? `Pagado el ${formatDate(charge.paid_at)}` : "Pagado"}
+            {charge.payment_method ? ` · ${charge.payment_method.toUpperCase()}` : ""}
+          </Text>
+          <Pressable
+            onPress={() => onUnmark(charge.id)}
+            hitSlop={12}
+            className="active:opacity-50"
+          >
+            <Text className="text-xs text-red-400 font-medium">Revertir</Text>
+          </Pressable>
+        </View>
+      )}
     </View>
+  );
+
+  if (!canPay) return inner;
+
+  return (
+    <Link
+      href={{
+        pathname: "/charges/[id]/pay",
+        params: {
+          id: charge.id,
+          concept: charge.concept,
+          amount: String(charge.amount),
+          client_name: charge.client_name ?? "",
+        },
+      }}
+      asChild
+    >
+      <Pressable className="active:opacity-70">{inner}</Pressable>
+    </Link>
   );
 }
 
@@ -60,6 +98,24 @@ export default function ClientDetailScreen() {
   }, [id]);
 
   useFocusEffect(load);
+
+  function handleUnmark(chargeId: string) {
+    Alert.alert(
+      "Revertir pago",
+      "¿Seguro? El cobro vuelve a pendiente y se borran los datos de pago.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Revertir",
+          style: "destructive",
+          onPress: () => {
+            unmarkPaid(chargeId);
+            load();
+          },
+        },
+      ],
+    );
+  }
 
   function handleDelete() {
     Alert.alert(
@@ -137,7 +193,7 @@ export default function ClientDetailScreen() {
         ) : (
           <View className="gap-2">
             {charges.map((charge) => (
-              <ChargeRow key={charge.id} charge={charge} />
+              <ChargeRow key={charge.id} charge={charge} onUnmark={handleUnmark} />
             ))}
           </View>
         )}
