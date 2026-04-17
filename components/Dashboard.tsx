@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import { markOverdue, getSummary, listCharges, createCharge } from "../db/charges";
 import { createClient, listClients } from "../db/clients";
 import { getDb } from "../db/database";
@@ -163,6 +164,7 @@ function ChargeCard({ charge }: { charge: Charge }) {
 // Dashboard
 // ---------------------------------------------------------------------------
 export default function Dashboard() {
+  const router = useRouter();
   const [summary, setSummary] = useState<Summary>({
     totalPending: 0,
     totalOverdue: 0,
@@ -197,30 +199,40 @@ export default function Dashboard() {
   }, [statusFilter, load]);
 
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      stickyHeaderIndices={[1]}
-    >
-      <SummaryPanel summary={summary} />
+    <View className="flex-1">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        stickyHeaderIndices={[1]}
+      >
+        <SummaryPanel summary={summary} />
 
-      <View className="bg-gray-50">
-        <FilterBar active={statusFilter} onChange={setStatusFilter} />
-      </View>
+        <View className="bg-gray-50">
+          <FilterBar active={statusFilter} onChange={setStatusFilter} />
+        </View>
 
-      <View className="pt-2 pb-8">
-        {charges.length === 0 ? (
-          <View className="items-center py-16 gap-2">
-            <Text className="text-4xl">📋</Text>
-            <Text className="text-base font-medium text-gray-500">No charges</Text>
-            <Text className="text-sm text-gray-400">
-              {statusFilter ? `No ${statusFilter} charges` : "No charges registered"}
-            </Text>
-          </View>
-        ) : (
-          charges.map((c) => <ChargeCard key={c.id} charge={c} />)
-        )}
-      </View>
-    </ScrollView>
+        <View className="pt-2 pb-24">
+          {charges.length === 0 ? (
+            <View className="items-center py-16 gap-2">
+              <Text className="text-4xl">📋</Text>
+              <Text className="text-base font-medium text-gray-500">No charges</Text>
+              <Text className="text-sm text-gray-400">
+                {statusFilter ? `No ${statusFilter} charges` : "No charges registered"}
+              </Text>
+            </View>
+          ) : (
+            charges.map((c) => <ChargeCard key={c.id} charge={c} />)
+          )}
+        </View>
+      </ScrollView>
+
+      {/* FAB — nuevo cliente */}
+      <Pressable
+        onPress={() => router.push("/clients/new")}
+        className="absolute bottom-8 right-6 bg-blue-600 w-14 h-14 rounded-full items-center justify-center shadow-lg"
+      >
+        <Text className="text-white text-3xl font-light leading-none">+</Text>
+      </Pressable>
+    </View>
   );
 }
