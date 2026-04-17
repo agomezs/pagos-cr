@@ -6,12 +6,14 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { deleteTemplate, listTemplates } from "../../db/chargeTemplates";
 import { formatColones } from "../../lib/format";
 import type { ChargeTemplate } from "../../lib/types";
 
 export default function TemplatesScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [templates, setTemplates] = useState<ChargeTemplate[]>([]);
 
@@ -41,7 +43,7 @@ export default function TemplatesScreen() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      <View className="px-4 pt-14 pb-3">
+      <View className="px-4 pb-3" style={{ paddingTop: insets.top + 16 }}>
         <Text className="text-xl font-bold text-gray-900">Plantillas</Text>
       </View>
 

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import ScreenHeader from "../../../components/ScreenHeader";
 import { markPaid } from "../../../db/charges";
 import { formatColones, formatDate } from "../../../lib/format";
 import type { PaymentMethod } from "../../../lib/types";
@@ -64,12 +65,7 @@ export default function PayChargeScreen() {
         contentContainerClassName="p-4 gap-6"
       >
         {/* Header */}
-        <View className="flex-row items-center gap-3 pt-12 pb-2">
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Text className="text-blue-600 text-base font-medium">← Volver</Text>
-          </Pressable>
-          <Text className="text-xl font-bold text-gray-900">Registrar pago</Text>
-        </View>
+        <ScreenHeader title="Registrar pago" onBack={() => router.back()} />
 
         {/* Charge summary */}
         <View className="bg-white rounded-2xl px-4 py-4 border border-gray-100 gap-2">

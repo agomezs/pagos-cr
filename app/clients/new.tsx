@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
+import ScreenHeader from "../../components/ScreenHeader";
 import { createClient } from "../../db/clients";
 
 export default function NewClientScreen() {
@@ -47,12 +48,7 @@ export default function NewClientScreen() {
         contentContainerClassName="p-4 gap-6"
       >
         {/* Header */}
-        <View className="flex-row items-center gap-3 pt-12 pb-2">
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Text className="text-blue-600 text-base font-medium">← Volver</Text>
-          </Pressable>
-          <Text className="text-xl font-bold text-gray-900">Nuevo cliente</Text>
-        </View>
+        <ScreenHeader title="Nuevo cliente" onBack={() => router.back()} />
 
         {/* Name */}
         <View className="gap-1.5">

@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { listClients } from "../../db/clients";
 import type { Client } from "../../lib/types";
@@ -25,6 +26,7 @@ function ClientRow({ client, onPress }: { client: Client; onPress: () => void })
 }
 
 export default function ClientsScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,7 +46,7 @@ export default function ClientsScreen() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      <View className="px-4 pt-14 pb-3">
+      <View className="px-4 pb-3" style={{ paddingTop: insets.top + 16 }}>
         <Text className="text-xl font-bold text-gray-900">Clientes</Text>
       </View>
 

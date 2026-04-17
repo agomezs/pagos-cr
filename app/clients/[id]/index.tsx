@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, useFocusEffect, Link } from "expo-router";
+import ScreenHeader from "../../../components/ScreenHeader";
 import { getClient, deactivateClient } from "../../../db/clients";
 import { listChargesByClient, unmarkPaid } from "../../../db/charges";
 import { formatColones, formatDate } from "../../../lib/format";
@@ -140,14 +141,15 @@ export default function ClientDetailScreen() {
   return (
     <ScrollView className="flex-1 bg-gray-50" contentContainerClassName="p-4 gap-6">
       {/* Header */}
-      <View className="flex-row items-center justify-between pt-12 pb-2">
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Text className="text-blue-600 text-base font-medium">← Volver</Text>
-        </Pressable>
-        <Pressable onPress={() => router.push(`/clients/${id}/edit`)} hitSlop={12}>
-          <Text className="text-blue-600 text-base font-medium">Editar</Text>
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title=""
+        onBack={() => router.back()}
+        right={
+          <Pressable onPress={() => router.push(`/clients/${id}/edit`)} hitSlop={12}>
+            <Text className="text-blue-600 text-base font-medium">Editar</Text>
+          </Pressable>
+        }
+      />
 
       {/* Info card */}
       <View className="bg-white rounded-2xl px-4 py-4 border border-gray-100 gap-3">

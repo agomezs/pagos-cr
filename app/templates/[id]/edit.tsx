@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import ScreenHeader from "../../../components/ScreenHeader";
 import { listTemplates, updateTemplate } from "../../../db/chargeTemplates";
 
 export default function EditTemplateScreen() {
@@ -49,12 +50,7 @@ export default function EditTemplateScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="p-4 gap-6">
-        <View className="flex-row items-center gap-3 pt-12 pb-2">
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Text className="text-blue-600 text-base font-medium">← Volver</Text>
-          </Pressable>
-          <Text className="text-xl font-bold text-gray-900">Editar plantilla</Text>
-        </View>
+        <ScreenHeader title="Editar plantilla" onBack={() => router.back()} />
 
         <View className="gap-1.5">
           <Text className="text-sm font-semibold text-gray-700">
