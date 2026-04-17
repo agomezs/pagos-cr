@@ -4,17 +4,23 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { listClients } from "../../db/clients";
 import type { Client } from "../../lib/types";
 
-function ClientRow({ client }: { client: Client }) {
+function ClientRow({ client, onPress }: { client: Client; onPress: () => void }) {
   return (
-    <View className="mx-4 mb-3 bg-white rounded-2xl px-4 py-3 border border-gray-100 shadow-sm gap-0.5">
-      <Text className="text-base font-semibold text-gray-900">{client.name}</Text>
+    <Pressable
+      onPress={onPress}
+      className="mx-4 mb-3 bg-white rounded-2xl px-4 py-3 border border-gray-100 shadow-sm gap-0.5 active:opacity-70"
+    >
+      <View className="flex-row items-center justify-between">
+        <Text className="text-base font-semibold text-gray-900">{client.name}</Text>
+        <Text className="text-gray-300 text-lg">›</Text>
+      </View>
       {client.phone ? (
         <Text className="text-sm text-gray-500">{client.phone}</Text>
       ) : null}
       {client.notes ? (
         <Text className="text-sm text-gray-400" numberOfLines={1}>{client.notes}</Text>
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 
@@ -46,7 +52,9 @@ export default function ClientsScreen() {
         className="flex-1"
         data={clients}
         keyExtractor={(c) => c.id}
-        renderItem={({ item }) => <ClientRow client={item} />}
+        renderItem={({ item }) => (
+          <ClientRow client={item} onPress={() => router.push(`/clients/${item.id}`)} />
+        )}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
           <View className="items-center py-16 gap-2">
