@@ -67,6 +67,9 @@ export default function TemplatesScreen() {
               <Text className="text-base font-semibold text-gray-900">{item.concept}</Text>
               <Text className="text-sm text-gray-500">{formatColones(item.amount)}</Text>
             </View>
+            <View className="justify-center px-2">
+              <Text className="text-gray-300 text-lg">›</Text>
+            </View>
             <Pressable
               onPress={() => confirmDelete(item.id, item.concept)}
               className="bg-red-50 px-4 items-center justify-center active:bg-red-100"

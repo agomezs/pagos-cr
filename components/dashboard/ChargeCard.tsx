@@ -33,7 +33,7 @@ export function ChargeCard({ charge }: { charge: Charge }) {
   return (
     <Pressable
       onPress={handlePress}
-      className="mx-4 mb-3 bg-white rounded-2xl p-4 border border-gray-100 active:opacity-70"
+      className={`mx-4 mb-3 bg-white rounded-2xl p-4 border border-gray-100 active:opacity-70 ${charge.status === "overdue" ? "border-l-4 border-l-red-400" : ""}`}
     >
       <View className="flex-row items-start justify-between gap-2">
         <View className="flex-1 gap-0.5">
@@ -62,7 +62,7 @@ export function ChargeCard({ charge }: { charge: Charge }) {
         </View>
         <View className="flex-row items-center gap-1.5">
           <Text className="text-lg font-bold text-gray-900">{formatColones(charge.amount)}</Text>
-          {canPay && <Text className="text-gray-300 text-base">›</Text>}
+          <Text className="text-gray-300 text-base">›</Text>
         </View>
       </View>
     </Pressable>

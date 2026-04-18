@@ -63,7 +63,10 @@ export function listCharges(filters: ChargeFilters = {}): Charge[] {
        AND (? IS NULL OR c.client_id = ?)
        AND (? IS NULL OR c.due_date >= ?)
        AND (? IS NULL OR c.due_date <= ?)
-     ORDER BY c.due_date ASC`,
+     ORDER BY
+       CASE c.status WHEN 'overdue' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END,
+       CASE WHEN c.status IN ('overdue', 'pending') THEN c.due_date END ASC,
+       CASE WHEN c.status = 'paid' THEN c.paid_at END DESC`,
     filters.status ?? null,
     filters.status ?? null,
     filters.client_id ?? null,
