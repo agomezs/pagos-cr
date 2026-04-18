@@ -1,19 +1,19 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import {
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { markOverdue, getSummary, listCharges, createCharge } from "../db/charges";
 import { createClient, listClients } from "../db/clients";
 import { getDb } from "../db/database";
-import { formatColones, formatDate } from "../lib/format";
+import { formatColones } from "../lib/format";
 import type { Charge, ChargeStatus, Client, Summary } from "../lib/types";
+import { ChargeCard } from "./dashboard/ChargeCard";
+import { ClientPickerModal } from "./dashboard/ClientPickerModal";
 
 // ---------------------------------------------------------------------------
 // Seed helper — inserts demo data on first run
@@ -126,72 +126,6 @@ function StatusSegmentedControl({
 }
 
 // ---------------------------------------------------------------------------
-// ClientPicker modal
-// ---------------------------------------------------------------------------
-function ClientPickerModal({
-  visible,
-  clients,
-  selected,
-  onSelect,
-  onClose,
-}: {
-  visible: boolean;
-  clients: Client[];
-  selected: string | null;
-  onSelect: (id: string | null) => void;
-  onClose: () => void;
-}) {
-  const [search, setSearch] = useState("");
-  const filtered = clients.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View className="flex-1 bg-gray-50">
-        <View className="px-4 pt-6 pb-3 flex-row items-center justify-between border-b border-gray-100 bg-white">
-          <Text className="text-lg font-bold text-gray-900">Filtrar por cliente</Text>
-          <Pressable onPress={onClose} className="active:opacity-70">
-            <Text className="text-blue-600 font-semibold text-base">Listo</Text>
-          </Pressable>
-        </View>
-        <View className="px-4 py-3 bg-white border-b border-gray-100">
-          <TextInput
-            className="bg-gray-100 rounded-xl px-4 py-2.5 text-base text-gray-900"
-            placeholder="Buscar cliente…"
-            placeholderTextColor="#9ca3af"
-            value={search}
-            onChangeText={setSearch}
-            autoFocus
-          />
-        </View>
-        <ScrollView>
-          <Pressable
-            onPress={() => { onSelect(null); onClose(); }}
-            className="px-4 py-4 bg-white border-b border-gray-100 active:opacity-70"
-          >
-            <Text className={`text-base ${selected === null ? "text-blue-600 font-semibold" : "text-gray-800"}`}>
-              Todos los clientes
-            </Text>
-          </Pressable>
-          {filtered.map((c) => (
-            <Pressable
-              key={c.id}
-              onPress={() => { onSelect(c.id); onClose(); }}
-              className="px-4 py-4 bg-white border-b border-gray-100 active:opacity-70"
-            >
-              <Text className={`text-base ${selected === c.id ? "text-blue-600 font-semibold" : "text-gray-800"}`}>
-                {c.name}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
-    </Modal>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // SecondaryFilterRow — client chip + date range chips
 // ---------------------------------------------------------------------------
 function toISO(date: Date): string {
@@ -266,75 +200,6 @@ function SecondaryFilterRow({
         );
       })}
     </ScrollView>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// ChargeCard
-// ---------------------------------------------------------------------------
-const STATUS_STYLE: Record<ChargeStatus, { badge: string; text: string; label: string }> = {
-  pending: { badge: "bg-blue-100", text: "text-blue-700", label: "Pendiente" },
-  overdue: { badge: "bg-red-100",  text: "text-red-700",  label: "Vencido" },
-  paid:    { badge: "bg-green-100", text: "text-green-700", label: "Pagado" },
-};
-
-function ChargeCard({ charge }: { charge: Charge }) {
-  const router = useRouter();
-  const style = STATUS_STYLE[charge.status];
-  const canPay = charge.status === "pending" || charge.status === "overdue";
-
-  function handlePress() {
-    if (canPay) {
-      router.push({
-        pathname: "/charges/[id]/pay",
-        params: {
-          id: charge.id,
-          concept: charge.concept,
-          amount: String(charge.amount),
-          client_name: charge.client_name ?? "",
-        },
-      });
-    } else {
-      router.push(`/clients/${charge.client_id}`);
-    }
-  }
-
-  return (
-    <Pressable
-      onPress={handlePress}
-      className="mx-4 mb-3 bg-white rounded-2xl p-4 border border-gray-100 active:opacity-70"
-    >
-      <View className="flex-row items-start justify-between gap-2">
-        <View className="flex-1 gap-0.5">
-          <Text className="text-base font-semibold text-gray-900" numberOfLines={1}>
-            {charge.client_name}
-          </Text>
-          <Text className="text-sm text-gray-500" numberOfLines={1}>
-            {charge.concept}
-          </Text>
-        </View>
-        <View className={`px-2.5 py-1 rounded-full ${style.badge}`}>
-          <Text className={`text-xs font-semibold ${style.text}`}>{style.label}</Text>
-        </View>
-      </View>
-
-      <View className="mt-3 flex-row items-end justify-between">
-        <View className="gap-0.5">
-          <Text className="text-xs text-gray-400">
-            {charge.status === "paid" && charge.paid_at
-              ? `Pagado el ${formatDate(charge.paid_at)}`
-              : `Vence ${formatDate(charge.due_date)}`}
-          </Text>
-          {charge.payment_method && (
-            <Text className="text-xs text-gray-400 capitalize">{charge.payment_method.toUpperCase()}</Text>
-          )}
-        </View>
-        <View className="flex-row items-center gap-1.5">
-          <Text className="text-lg font-bold text-gray-900">{formatColones(charge.amount)}</Text>
-          {canPay && <Text className="text-gray-300 text-base">›</Text>}
-        </View>
-      </View>
-    </Pressable>
   );
 }
 

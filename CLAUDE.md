@@ -7,3 +7,7 @@ Extract a component when it genuinely simplifies the code — e.g. the logic is 
 ## Navigation / UX Conventions
 
 Use a chevron `›` (right-aligned, `text-gray-300`) on tappable cards that navigate to an edit or detail screen. This follows the iOS settings pattern and signals interactivity without adding visual noise.
+
+## Component Catalog
+
+Reusable components are documented in `docs/component-catalog.md`. Check it before creating new components — props, behavior, and usage examples are there.
