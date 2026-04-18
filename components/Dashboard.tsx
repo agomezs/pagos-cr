@@ -72,7 +72,7 @@ function SummaryPanel({ summary }: { summary: Summary }) {
         <StatCard label="Pagado" count={summary.paidCount} amount={summary.totalPaid} color="bg-green-600" />
         <View className="flex-1 rounded-2xl p-4 bg-gray-100 gap-1 justify-center">
           <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Por cobrar</Text>
-          <Text className="text-xl font-bold text-gray-800">
+          <Text className="text-2xl font-bold text-gray-800">
             {formatColones(summary.totalPending + summary.totalOverdue)}
           </Text>
         </View>
@@ -82,16 +82,23 @@ function SummaryPanel({ summary }: { summary: Summary }) {
 }
 
 // ---------------------------------------------------------------------------
-// StatusFilterBar
+// StatusSegmentedControl
 // ---------------------------------------------------------------------------
-const STATUS_FILTERS: { label: string; value: ChargeStatus | null; unselected: string; selected: string }[] = [
-  { label: "Todos",     value: null,      unselected: "border-gray-300 bg-white",     selected: "bg-gray-900 border-gray-900" },
-  { label: "Pendiente", value: "pending", unselected: "border-blue-200 bg-blue-50",   selected: "bg-blue-600 border-blue-600" },
-  { label: "Vencido",   value: "overdue", unselected: "border-red-200 bg-red-50",     selected: "bg-red-600 border-red-600" },
-  { label: "Pagado",    value: "paid",    unselected: "border-green-200 bg-green-50", selected: "bg-green-600 border-green-600" },
+const SEGMENTS: { label: string; value: ChargeStatus | null }[] = [
+  { label: "Todos",     value: null },
+  { label: "Pendiente", value: "pending" },
+  { label: "Vencido",   value: "overdue" },
+  { label: "Pagado",    value: "paid" },
 ];
 
-function StatusFilterBar({
+const SEGMENT_ACTIVE_COLOR: Record<string, string> = {
+  "null":    "bg-gray-800",
+  "pending": "bg-blue-600",
+  "overdue": "bg-red-600",
+  "paid":    "bg-green-600",
+};
+
+function StatusSegmentedControl({
   active,
   onChange,
 }: {
@@ -99,26 +106,22 @@ function StatusFilterBar({
   onChange: (v: ChargeStatus | null) => void;
 }) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerClassName="px-4 py-2 gap-2"
-    >
-      {STATUS_FILTERS.map((f) => {
-        const selected = active === f.value;
+    <View className="mx-4 mt-3 mb-1 flex-row bg-gray-100 rounded-xl p-1 gap-0.5">
+      {SEGMENTS.map((s) => {
+        const selected = active === s.value;
         return (
           <Pressable
-            key={String(f.value)}
-            onPress={() => onChange(f.value)}
-            className={`px-4 py-2 rounded-full border ${selected ? f.selected : f.unselected} active:opacity-70`}
+            key={String(s.value)}
+            onPress={() => onChange(s.value)}
+            className={`flex-1 py-2 items-center rounded-lg active:opacity-70 ${selected ? (SEGMENT_ACTIVE_COLOR[String(s.value)] ?? "bg-gray-800") : ""}`}
           >
-            <Text className={`text-sm font-semibold ${selected ? "text-white" : "text-gray-700"}`}>
-              {f.label}
+            <Text className={`text-xs font-semibold ${selected ? "text-white" : "text-gray-500"}`}>
+              {s.label}
             </Text>
           </Pressable>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -189,7 +192,7 @@ function ClientPickerModal({
 }
 
 // ---------------------------------------------------------------------------
-// DateRangeRow
+// SecondaryFilterRow — client chip + date range chips
 // ---------------------------------------------------------------------------
 function toISO(date: Date): string {
   const y = date.getFullYear();
@@ -198,77 +201,71 @@ function toISO(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-const QUICK_RANGES: { label: string; from: string | null; to: string | null }[] = (() => {
+const QUICK_RANGES: { label: string; from: string; to: string }[] = (() => {
   const today = new Date();
   const y = today.getFullYear();
   const mo = today.getMonth();
-
-  const startOfMonth = new Date(y, mo, 1);
-  const endOfMonth = new Date(y, mo + 1, 0);
-  const startOfNext = new Date(y, mo + 1, 1);
-  const endOfNext = new Date(y, mo + 2, 0);
-  const startOfPrev = new Date(y, mo - 1, 1);
-  const endOfPrev = new Date(y, mo, 0);
-
   return [
-    { label: "Mes anterior", from: toISO(startOfPrev), to: toISO(endOfPrev) },
-    { label: "Este mes",     from: toISO(startOfMonth), to: toISO(endOfMonth) },
-    { label: "Próximo mes",  from: toISO(startOfNext), to: toISO(endOfNext) },
+    { label: "Mes ant.",  from: toISO(new Date(y, mo - 1, 1)), to: toISO(new Date(y, mo, 0)) },
+    { label: "Este mes",  from: toISO(new Date(y, mo, 1)),     to: toISO(new Date(y, mo + 1, 0)) },
+    { label: "Próx. mes", from: toISO(new Date(y, mo + 1, 1)), to: toISO(new Date(y, mo + 2, 0)) },
   ];
 })();
 
-function DateRangeRow({
+function SecondaryFilterRow({
+  clientFilter,
   dateFrom,
   dateTo,
-  onChangeDateFrom,
-  onChangeDateTo,
+  selectedClient,
+  onClientPress,
+  onDateRange,
 }: {
+  clientFilter: string | null;
   dateFrom: string | null;
   dateTo: string | null;
-  onChangeDateFrom: (v: string | null) => void;
-  onChangeDateTo: (v: string | null) => void;
+  selectedClient: Client | null;
+  onClientPress: () => void;
+  onDateRange: (from: string | null, to: string | null) => void;
 }) {
-  const hasRange = dateFrom !== null || dateTo !== null;
-
   return (
-    <View className="px-4 pb-2 gap-2">
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
-        {QUICK_RANGES.map((r) => {
-          const active = dateFrom === r.from && dateTo === r.to;
-          return (
-            <Pressable
-              key={r.label}
-              onPress={() => {
-                if (active) {
-                  onChangeDateFrom(null);
-                  onChangeDateTo(null);
-                } else {
-                  onChangeDateFrom(r.from);
-                  onChangeDateTo(r.to);
-                }
-              }}
-              className={`px-4 py-2 rounded-full border ${
-                active
-                  ? "bg-gray-900 border-gray-900"
-                  : "bg-white border-gray-300"
-              } active:opacity-70`}
-            >
-              <Text className={`text-sm font-semibold ${active ? "text-white" : "text-gray-700"}`}>
-                {r.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-        {hasRange && (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerClassName="px-4 py-2 gap-2 items-center"
+    >
+      {/* Client chip */}
+      <Pressable
+        onPress={onClientPress}
+        className={`flex-row items-center gap-1 px-3.5 py-1.5 rounded-full border ${
+          clientFilter ? "bg-indigo-600 border-indigo-600" : "bg-white border-gray-300"
+        } active:opacity-70`}
+      >
+        <Text className={`text-sm font-semibold ${clientFilter ? "text-white" : "text-gray-600"}`}>
+          {selectedClient ? selectedClient.name : "Cliente"}
+        </Text>
+        <Text className={`text-xs ${clientFilter ? "text-white/70" : "text-gray-400"}`}>
+          {clientFilter ? "✕" : "▾"}
+        </Text>
+      </Pressable>
+
+      {/* Date range chips */}
+      {QUICK_RANGES.map((r) => {
+        const active = dateFrom === r.from && dateTo === r.to;
+        return (
           <Pressable
-            onPress={() => { onChangeDateFrom(null); onChangeDateTo(null); }}
-            className="px-4 py-2 rounded-full border border-gray-200 bg-gray-100 active:opacity-70"
+            key={r.label}
+            onPress={() => onDateRange(active ? null : r.from, active ? null : r.to)}
+            className={`px-3.5 py-1.5 rounded-full border ${
+              active ? "bg-gray-900 border-gray-900" : "bg-white border-gray-300"
+            } active:opacity-70`}
           >
-            <Text className="text-sm font-semibold text-gray-500">Quitar rango ✕</Text>
+            <Text className={`text-sm font-semibold ${active ? "text-white" : "text-gray-600"}`}>
+              {r.label}
+            </Text>
           </Pressable>
-        )}
-      </ScrollView>
-    </View>
+        );
+      })}
+    </ScrollView>
   );
 }
 
@@ -395,40 +392,15 @@ export default function Dashboard() {
         <SummaryPanel summary={summary} />
 
         {/* Sticky filter area */}
-        <View className="bg-gray-50 border-b border-gray-100">
-          <StatusFilterBar active={statusFilter} onChange={setStatusFilter} />
-
-          {/* Client filter button */}
-          <View className="px-4 pb-2 flex-row items-center gap-2">
-            <Pressable
-              onPress={() => setShowClientPicker(true)}
-              className={`flex-row items-center gap-1.5 px-4 py-2 rounded-full border ${
-                clientFilter
-                  ? "bg-indigo-600 border-indigo-600"
-                  : "bg-white border-gray-300"
-              } active:opacity-70`}
-            >
-              <Text className={`text-sm font-semibold ${clientFilter ? "text-white" : "text-gray-700"}`}>
-                {selectedClient ? selectedClient.name : "Cliente"}
-              </Text>
-              <Text className={`text-sm ${clientFilter ? "text-white/70" : "text-gray-400"}`}>▾</Text>
-            </Pressable>
-
-            {clientFilter && (
-              <Pressable
-                onPress={() => setClientFilter(null)}
-                className="px-3 py-2 rounded-full border border-gray-200 bg-gray-100 active:opacity-70"
-              >
-                <Text className="text-sm text-gray-500">✕</Text>
-              </Pressable>
-            )}
-          </View>
-
-          <DateRangeRow
+        <View className="bg-gray-50 border-b border-gray-100 pb-1">
+          <StatusSegmentedControl active={statusFilter} onChange={setStatusFilter} />
+          <SecondaryFilterRow
+            clientFilter={clientFilter}
             dateFrom={dateFrom}
             dateTo={dateTo}
-            onChangeDateFrom={setDateFrom}
-            onChangeDateTo={setDateTo}
+            selectedClient={selectedClient}
+            onClientPress={() => setShowClientPicker(true)}
+            onDateRange={(from, to) => { setDateFrom(from); setDateTo(to); }}
           />
         </View>
 
@@ -469,7 +441,13 @@ export default function Dashboard() {
         visible={showClientPicker}
         clients={clients}
         selected={clientFilter}
-        onSelect={setClientFilter}
+        onSelect={(id) => {
+          if (clientFilter === id) {
+            setClientFilter(null);
+          } else {
+            setClientFilter(id);
+          }
+        }}
         onClose={() => setShowClientPicker(false)}
       />
     </View>

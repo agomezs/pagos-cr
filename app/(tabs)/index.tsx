@@ -1,13 +1,16 @@
-import { View, Platform } from "react-native";
+import { View, Text } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Dashboard from "../../components/Dashboard";
 
 export default function DashboardScreen() {
   return (
-    <View className="flex-1 bg-gray-50">
+    <SafeAreaView edges={["top"]} className="flex-1 bg-gray-50">
       <StatusBar style="dark" />
-      <View style={{ paddingTop: Platform.OS === "ios" ? 54 : 32 }} />
+      <View className="px-4 pb-3">
+        <Text className="text-xl font-bold text-gray-900">Cobros</Text>
+      </View>
       <Dashboard />
-    </View>
+    </SafeAreaView>
   );
 }
