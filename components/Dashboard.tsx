@@ -245,9 +245,9 @@ export default function Dashboard() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    load();
+    await load();
     setRefreshing(false);
   }, [load]);
 

@@ -3,6 +3,14 @@ import { Pressable, Text, View } from "react-native";
 import { formatColones, formatDate } from "../../lib/format";
 import type { Charge, ChargeStatus } from "../../lib/types";
 
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  sinpe: "SINPE",
+  efectivo: "Efectivo",
+  transferencia: "Transferencia",
+  transfer: "Transferencia",
+  cash: "Efectivo",
+};
+
 const STATUS_STYLE: Record<ChargeStatus, { badge: string; text: string; label: string }> = {
   pending: { badge: "bg-blue-100", text: "text-blue-700", label: "Pendiente" },
   overdue: { badge: "bg-red-100",  text: "text-red-700",  label: "Vencido" },
@@ -57,7 +65,7 @@ export function ChargeCard({ charge }: { charge: Charge }) {
               : `Vence ${formatDate(charge.due_date)}`}
           </Text>
           {charge.payment_method && (
-            <Text className="text-xs text-gray-400 capitalize">{charge.payment_method.toUpperCase()}</Text>
+            <Text className="text-xs text-gray-400">{PAYMENT_METHOD_LABEL[charge.payment_method] ?? charge.payment_method}</Text>
           )}
         </View>
         <View className="flex-row items-center gap-1.5">
