@@ -75,6 +75,9 @@ function SummaryPanel({ summary }: { summary: Summary }) {
           <Text className="text-2xl font-bold text-gray-800">
             {formatColones(summary.totalPending + summary.totalOverdue)}
           </Text>
+          <Text className="text-xs text-gray-500">
+            {summary.pendingCount + summary.overdueCount} cobro{(summary.pendingCount + summary.overdueCount) !== 1 ? "s" : ""}
+          </Text>
         </View>
       </View>
     </View>
@@ -264,7 +267,7 @@ export default function Dashboard() {
             dateFrom={dateFrom}
             dateTo={dateTo}
             selectedClient={selectedClient}
-            onClientPress={() => setShowClientPicker(true)}
+            onClientPress={() => clientFilter ? setClientFilter(null) : setShowClientPicker(true)}
             onDateRange={(from, to) => { setDateFrom(from); setDateTo(to); }}
           />
         </View>
