@@ -14,11 +14,12 @@ import ScreenHeader from "../../../components/ScreenHeader";
 import { markPaid } from "../../../db/charges";
 import { formatColones, formatDate } from "../../../lib/format";
 import type { PaymentMethod } from "../../../lib/types";
+import { LABELS } from "../../../constants/labels";
 
 const METHODS: { value: PaymentMethod; label: string }[] = [
-  { value: "sinpe", label: "SINPE" },
-  { value: "transfer", label: "Transferencia" },
-  { value: "cash", label: "Efectivo" },
+  { value: "sinpe", label: LABELS.paymentMethod.sinpe },
+  { value: "transfer", label: LABELS.paymentMethod.transfer },
+  { value: "cash", label: LABELS.paymentMethod.cash },
 ];
 
 function toISO(date: Date): string {
@@ -45,7 +46,7 @@ export default function PayChargeScreen() {
 
   function handleConfirm() {
     if (!method) {
-      setError("Seleccioná el método de pago.");
+      setError(LABELS.pay.errorMethodRequired);
       return;
     }
     setError(null);
@@ -65,12 +66,12 @@ export default function PayChargeScreen() {
         contentContainerClassName="p-4 gap-6"
       >
         {/* Header */}
-        <ScreenHeader title="Registrar pago" onBack={() => router.back()} />
+        <ScreenHeader title={LABELS.pay.screenTitle} onBack={() => router.back()} />
 
         {/* Charge summary */}
         <View className="bg-white rounded-2xl px-4 py-4 border border-gray-100 gap-2">
           <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-            Cobro
+            {LABELS.pay.chargeHeader}
           </Text>
           <Text className="text-base font-semibold text-gray-900">{concept}</Text>
           {client_name ? (
@@ -84,7 +85,7 @@ export default function PayChargeScreen() {
         {/* Método de pago */}
         <View className="gap-2">
           <Text className="text-sm font-semibold text-gray-700">
-            Método de pago <Text className="text-red-500">*</Text>
+            {LABELS.pay.fieldPaymentMethod} <Text className="text-red-500">*</Text>
           </Text>
           <View className="flex-row gap-2">
             {METHODS.map(({ value, label }) => {
@@ -117,7 +118,7 @@ export default function PayChargeScreen() {
 
         {/* Fecha de pago */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">Fecha de pago</Text>
+          <Text className="text-sm font-semibold text-gray-700">{LABELS.pay.fieldPaymentDate}</Text>
           <Pressable
             onPress={() => setShowPicker(true)}
             className="bg-white border border-gray-200 rounded-xl px-4 py-3 active:opacity-70"
@@ -141,7 +142,7 @@ export default function PayChargeScreen() {
 
           {showPicker && Platform.OS === "ios" && (
             <Pressable onPress={() => setShowPicker(false)} className="items-end">
-              <Text className="text-blue-600 text-sm font-semibold py-1">Listo</Text>
+              <Text className="text-blue-600 text-sm font-semibold py-1">{LABELS.common.done}</Text>
             </Pressable>
           )}
         </View>
@@ -149,11 +150,11 @@ export default function PayChargeScreen() {
         {/* Nota opcional */}
         <View className="gap-1.5">
           <Text className="text-sm font-semibold text-gray-700">
-            Nota <Text className="text-gray-400 font-normal">(opcional)</Text>
+            {LABELS.pay.fieldNote} <Text className="text-gray-400 font-normal">{LABELS.common.optional}</Text>
           </Text>
           <TextInput
             className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
-            placeholder="Ej: Confirmado por WhatsApp"
+            placeholder={LABELS.pay.placeholderNote}
             placeholderTextColor="#9ca3af"
             value={note}
             onChangeText={(t) => setNote(t.slice(0, 500))}
@@ -182,7 +183,7 @@ export default function PayChargeScreen() {
               canConfirm ? "text-white" : "text-gray-400"
             }`}
           >
-            Confirmar pago
+            {LABELS.pay.confirmButton}
           </Text>
         </Pressable>
       </ScrollView>

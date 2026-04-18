@@ -14,6 +14,7 @@ import { formatColones } from "../lib/format";
 import type { Charge, ChargeStatus, Client, Summary } from "../lib/types";
 import { ChargeCard } from "./dashboard/ChargeCard";
 import { ClientPickerModal } from "./dashboard/ClientPickerModal";
+import { LABELS } from "../constants/labels";
 
 // ---------------------------------------------------------------------------
 // Seed helper — inserts demo data on first run
@@ -58,7 +59,7 @@ function StatCard({ label, count, amount, bg, active, onPress }: StatCardProps) 
     >
       <Text className="text-xs font-semibold text-white/80 uppercase tracking-wide">{label}</Text>
       <Text className="text-2xl font-bold text-white">{formatColones(amount)}</Text>
-      <Text className="text-xs text-white/70">{count} cobro{count !== 1 ? "s" : ""}</Text>
+      <Text className="text-xs text-white/70">{count} {count !== 1 ? LABELS.charges.chargePlural : LABELS.charges.chargeSingular}</Text>
     </Pressable>
   );
 }
@@ -66,20 +67,20 @@ function StatCard({ label, count, amount, bg, active, onPress }: StatCardProps) 
 function SummaryPanel({ summary, statusFilter, onStatusPress }: { summary: Summary; statusFilter: ChargeStatus | null; onStatusPress: (s: ChargeStatus) => void }) {
   return (
     <View className="px-4 pt-4 pb-2 gap-3">
-      <Text className="text-xl font-bold text-gray-900">Resumen</Text>
+      <Text className="text-xl font-bold text-gray-900">{LABELS.dashboard.summaryTitle}</Text>
       <View className="flex-row gap-3">
-        <StatCard label="Pendiente" count={summary.pendingCount} amount={summary.totalPending} bg="#3b82f6" active={statusFilter === "pending"} onPress={() => onStatusPress("pending")} />
-        <StatCard label="Vencido" count={summary.overdueCount} amount={summary.totalOverdue} bg="#ef4444" active={statusFilter === "overdue"} onPress={() => onStatusPress("overdue")} />
+        <StatCard label={LABELS.status.pending} count={summary.pendingCount} amount={summary.totalPending} bg="#3b82f6" active={statusFilter === "pending"} onPress={() => onStatusPress("pending")} />
+        <StatCard label={LABELS.status.overdue} count={summary.overdueCount} amount={summary.totalOverdue} bg="#ef4444" active={statusFilter === "overdue"} onPress={() => onStatusPress("overdue")} />
       </View>
       <View className="flex-row gap-3">
-        <StatCard label="Pagado" count={summary.paidCount} amount={summary.totalPaid} bg="#16a34a" active={statusFilter === "paid"} onPress={() => onStatusPress("paid")} />
+        <StatCard label={LABELS.status.paid} count={summary.paidCount} amount={summary.totalPaid} bg="#16a34a" active={statusFilter === "paid"} onPress={() => onStatusPress("paid")} />
         <View className="flex-1 rounded-2xl p-4 bg-gray-100 gap-1 justify-center">
-          <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Por cobrar</Text>
+          <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{LABELS.dashboard.totalReceivable}</Text>
           <Text className="text-2xl font-bold text-gray-800">
             {formatColones(summary.totalPending + summary.totalOverdue)}
           </Text>
           <Text className="text-xs text-gray-500">
-            {summary.pendingCount + summary.overdueCount} cobro{(summary.pendingCount + summary.overdueCount) !== 1 ? "s" : ""}
+            {summary.pendingCount + summary.overdueCount} {(summary.pendingCount + summary.overdueCount) !== 1 ? LABELS.charges.chargePlural : LABELS.charges.chargeSingular}
           </Text>
         </View>
       </View>
@@ -91,10 +92,10 @@ function SummaryPanel({ summary, statusFilter, onStatusPress }: { summary: Summa
 // StatusSegmentedControl
 // ---------------------------------------------------------------------------
 const SEGMENTS: { label: string; value: ChargeStatus | null }[] = [
-  { label: "Todos",     value: null },
-  { label: "Pendiente", value: "pending" },
-  { label: "Vencido",   value: "overdue" },
-  { label: "Pagado",    value: "paid" },
+  { label: LABELS.dashboard.filterAll,   value: null },
+  { label: LABELS.status.pending,        value: "pending" },
+  { label: LABELS.status.overdue,        value: "overdue" },
+  { label: LABELS.status.paid,           value: "paid" },
 ];
 
 const SEGMENT_ACTIVE_COLOR: Record<string, string> = {
@@ -146,9 +147,9 @@ const QUICK_RANGES: { label: string; from: string; to: string }[] = (() => {
   const y = today.getFullYear();
   const mo = today.getMonth();
   return [
-    { label: "Mes ant.",  from: toISO(new Date(y, mo - 1, 1)), to: toISO(new Date(y, mo, 0)) },
-    { label: "Este mes",  from: toISO(new Date(y, mo, 1)),     to: toISO(new Date(y, mo + 1, 0)) },
-    { label: "Próx. mes", from: toISO(new Date(y, mo + 1, 1)), to: toISO(new Date(y, mo + 2, 0)) },
+    { label: LABELS.dashboard.rangePrevMonth, from: toISO(new Date(y, mo - 1, 1)), to: toISO(new Date(y, mo, 0)) },
+    { label: LABELS.dashboard.rangeThisMonth, from: toISO(new Date(y, mo, 1)),     to: toISO(new Date(y, mo + 1, 0)) },
+    { label: LABELS.dashboard.rangeNextMonth, from: toISO(new Date(y, mo + 1, 1)), to: toISO(new Date(y, mo + 2, 0)) },
   ];
 })();
 
@@ -181,7 +182,7 @@ function SecondaryFilterRow({
         } active:opacity-70`}
       >
         <Text className={`text-sm font-semibold ${clientFilter ? "text-white" : "text-gray-600"}`}>
-          {selectedClient ? selectedClient.name : "Cliente"}
+          {selectedClient ? selectedClient.name : LABELS.dashboard.filterClient}
         </Text>
         <Text className={`text-xs ${clientFilter ? "text-white/70" : "text-gray-400"}`}>
           {clientFilter ? "✕" : "▾"}
@@ -283,7 +284,7 @@ export default function Dashboard() {
         <View className="pt-3 pb-24">
           {hasFilters && (
             <View className="px-4 pb-2 flex-row items-center justify-between">
-              <Text className="text-xs text-gray-400">{charges.length} resultado{charges.length !== 1 ? "s" : ""}</Text>
+              <Text className="text-xs text-gray-400">{charges.length} {charges.length !== 1 ? LABELS.charges.resultPlural : LABELS.charges.resultSingular}</Text>
               <Pressable
                 onPress={() => {
                   setStatusFilter(null);
@@ -293,7 +294,7 @@ export default function Dashboard() {
                 }}
                 className="active:opacity-70"
               >
-                <Text className="text-xs text-blue-500 font-semibold">Quitar filtros</Text>
+                <Text className="text-xs text-blue-500 font-semibold">{LABELS.charges.clearFilters}</Text>
               </Pressable>
             </View>
           )}
@@ -301,9 +302,9 @@ export default function Dashboard() {
           {charges.length === 0 ? (
             <View className="items-center py-16 gap-2">
               <Text className="text-4xl">📋</Text>
-              <Text className="text-base font-medium text-gray-500">Sin cobros</Text>
+              <Text className="text-base font-medium text-gray-500">{LABELS.charges.emptyFiltered}</Text>
               <Text className="text-sm text-gray-400">
-                {hasFilters ? "Ningún cobro coincide con los filtros" : "Aún no hay cobros registrados"}
+                {hasFilters ? LABELS.charges.emptyFilteredMessage : LABELS.charges.emptyInitialMessage}
               </Text>
             </View>
           ) : (

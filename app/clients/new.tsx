@@ -12,6 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import ScreenHeader from "../../components/ScreenHeader";
 import { createClient } from "../../db/clients";
+import { LABELS } from "../../constants/labels";
 
 export default function NewClientScreen() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function NewClientScreen() {
   function handleSave() {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setError("El nombre es obligatorio.");
+      setError(LABELS.clients.errorNameRequired);
       return;
     }
     setError(null);
@@ -48,16 +49,16 @@ export default function NewClientScreen() {
         contentContainerClassName="p-4 gap-6"
       >
         {/* Header */}
-        <ScreenHeader title="Nuevo cliente" onBack={() => router.back()} />
+        <ScreenHeader title={LABELS.clients.newTitle} onBack={() => router.back()} />
 
         {/* Name */}
         <View className="gap-1.5">
           <Text className="text-sm font-semibold text-gray-700">
-            Nombre <Text className="text-red-500">*</Text>
+            {LABELS.clients.fieldName} <Text className="text-red-500">*</Text>
           </Text>
           <TextInput
             className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
-            placeholder="Ej: Ana Rodríguez"
+            placeholder={LABELS.clients.placeholderName}
             placeholderTextColor="#9ca3af"
             value={name}
             onChangeText={(t) => {
@@ -72,10 +73,10 @@ export default function NewClientScreen() {
 
         {/* Phone */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">Teléfono</Text>
+          <Text className="text-sm font-semibold text-gray-700">{LABELS.clients.fieldPhone}</Text>
           <TextInput
             className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
-            placeholder="Ej: +506 8888-1234"
+            placeholder={LABELS.clients.placeholderPhone}
             placeholderTextColor="#9ca3af"
             value={phone}
             onChangeText={setPhone}
@@ -86,10 +87,10 @@ export default function NewClientScreen() {
 
         {/* Notes */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">Notas</Text>
+          <Text className="text-sm font-semibold text-gray-700">{LABELS.clients.fieldNotes}</Text>
           <TextInput
             className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
-            placeholder="Observaciones opcionales..."
+            placeholder={LABELS.clients.placeholderNotes}
             placeholderTextColor="#9ca3af"
             value={notes}
             onChangeText={(t) => setNotes(t.slice(0, 500))}
@@ -107,7 +108,7 @@ export default function NewClientScreen() {
           className={`rounded-xl py-4 items-center ${canSave ? "bg-blue-600" : "bg-gray-200"}`}
         >
           <Text className={`text-base font-semibold ${canSave ? "text-white" : "text-gray-400"}`}>
-            Guardar
+            {LABELS.common.save}
           </Text>
         </Pressable>
       </ScrollView>

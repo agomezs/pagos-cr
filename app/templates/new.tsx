@@ -12,6 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import ScreenHeader from "../../components/ScreenHeader";
 import { createTemplate } from "../../db/chargeTemplates";
+import { LABELS } from "../../constants/labels";
 
 export default function NewTemplateScreen() {
   const router = useRouter();
@@ -20,9 +21,9 @@ export default function NewTemplateScreen() {
   const [error, setError] = useState<string | null>(null);
 
   function validate(): string | null {
-    if (!concept.trim()) return "El concepto es obligatorio.";
+    if (!concept.trim()) return LABELS.templates.errorConceptRequired;
     const amt = parseInt(amount, 10);
-    if (!amount || isNaN(amt) || amt <= 0) return "El monto debe ser un número mayor a 0.";
+    if (!amount || isNaN(amt) || amt <= 0) return LABELS.templates.errorAmountInvalid;
     return null;
   }
 
@@ -46,15 +47,15 @@ export default function NewTemplateScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="p-4 gap-6">
-        <ScreenHeader title="Nueva plantilla" onBack={() => router.back()} />
+        <ScreenHeader title={LABELS.templates.newTitle} onBack={() => router.back()} />
 
         <View className="gap-1.5">
           <Text className="text-sm font-semibold text-gray-700">
-            Concepto <Text className="text-red-500">*</Text>
+            {LABELS.templates.fieldConcept} <Text className="text-red-500">*</Text>
           </Text>
           <TextInput
             className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
-            placeholder="Ej: Mensualidad mayo"
+            placeholder={LABELS.templates.placeholderConcept}
             placeholderTextColor="#9ca3af"
             value={concept}
             onChangeText={(t) => { setConcept(t.slice(0, 200)); setError(null); }}
@@ -65,11 +66,11 @@ export default function NewTemplateScreen() {
 
         <View className="gap-1.5">
           <Text className="text-sm font-semibold text-gray-700">
-            Monto (₡) <Text className="text-red-500">*</Text>
+            {LABELS.templates.fieldAmount} <Text className="text-red-500">*</Text>
           </Text>
           <TextInput
             className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
-            placeholder="Ej: 35000"
+            placeholder={LABELS.templates.placeholderAmount}
             placeholderTextColor="#9ca3af"
             value={amount}
             onChangeText={(t) => { setAmount(t.replace(/[^0-9]/g, "")); setError(null); }}
@@ -90,7 +91,7 @@ export default function NewTemplateScreen() {
           className={`rounded-xl py-4 items-center ${canSave ? "bg-blue-600" : "bg-gray-200"}`}
         >
           <Text className={`text-base font-semibold ${canSave ? "text-white" : "text-gray-400"}`}>
-            Guardar
+            {LABELS.common.save}
           </Text>
         </Pressable>
       </ScrollView>

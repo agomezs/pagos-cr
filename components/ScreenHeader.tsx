@@ -1,5 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LABELS } from "../constants/labels";
 
 type Props = {
   title: string;
@@ -17,7 +18,7 @@ export default function ScreenHeader({ title, onBack, right }: Props) {
       <View className="flex-row items-center gap-3 flex-1">
         {onBack && (
           <Pressable onPress={onBack} hitSlop={12}>
-            <Text className="text-blue-600 text-base font-medium">← Volver</Text>
+            <Text className="text-blue-600 text-base font-medium">{LABELS.common.back}</Text>
           </Pressable>
         )}
         <Text className="text-xl font-bold text-gray-900">{title}</Text>

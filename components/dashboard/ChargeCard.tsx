@@ -2,19 +2,20 @@ import { useRouter } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import { formatColones, formatDate } from "../../lib/format";
 import type { Charge, ChargeStatus } from "../../lib/types";
+import { LABELS } from "../../constants/labels";
 
 const PAYMENT_METHOD_LABEL: Record<string, string> = {
-  sinpe: "SINPE",
-  efectivo: "Efectivo",
-  transferencia: "Transferencia",
-  transfer: "Transferencia",
-  cash: "Efectivo",
+  sinpe: LABELS.paymentMethod.sinpe,
+  efectivo: LABELS.paymentMethod.cash,
+  transferencia: LABELS.paymentMethod.transfer,
+  transfer: LABELS.paymentMethod.transfer,
+  cash: LABELS.paymentMethod.cash,
 };
 
 const STATUS_STYLE: Record<ChargeStatus, { badge: string; text: string; label: string }> = {
-  pending: { badge: "bg-blue-100", text: "text-blue-700", label: "Pendiente" },
-  overdue: { badge: "bg-red-100",  text: "text-red-700",  label: "Vencido" },
-  paid:    { badge: "bg-green-100", text: "text-green-700", label: "Pagado" },
+  pending: { badge: "bg-blue-100", text: "text-blue-700", label: LABELS.status.pending },
+  overdue: { badge: "bg-red-100",  text: "text-red-700",  label: LABELS.status.overdue },
+  paid:    { badge: "bg-green-100", text: "text-green-700", label: LABELS.status.paid },
 };
 
 export function ChargeCard({ charge }: { charge: Charge }) {
@@ -61,8 +62,8 @@ export function ChargeCard({ charge }: { charge: Charge }) {
         <View className="gap-0.5">
           <Text className="text-xs text-gray-400">
             {charge.status === "paid" && charge.paid_at
-              ? `Pagado el ${formatDate(charge.paid_at)}`
-              : `Vence ${formatDate(charge.due_date)}`}
+              ? `${LABELS.charges.paidPrefix} ${formatDate(charge.paid_at)}`
+              : `${LABELS.charges.duePrefixShort} ${formatDate(charge.due_date)}`}
           </Text>
           {charge.payment_method && (
             <Text className="text-xs text-gray-400">{PAYMENT_METHOD_LABEL[charge.payment_method] ?? charge.payment_method}</Text>

@@ -11,6 +11,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { deleteTemplate, listTemplates } from "../../db/chargeTemplates";
 import { formatColones } from "../../lib/format";
 import type { ChargeTemplate } from "../../lib/types";
+import { LABELS } from "../../constants/labels";
 
 export default function TemplatesScreen() {
   const router = useRouter();
@@ -24,12 +25,12 @@ export default function TemplatesScreen() {
 
   function confirmDelete(id: string, concept: string) {
     Alert.alert(
-      "Eliminar plantilla",
-      `¿Eliminar "${concept}"? Los cobros existentes no se verán afectados.`,
+      LABELS.templates.deleteAlertTitle,
+      LABELS.templates.deleteAlertMessage(concept),
       [
-        { text: "Cancelar", style: "cancel" },
+        { text: LABELS.common.cancel, style: "cancel" },
         {
-          text: "Eliminar",
+          text: LABELS.common.delete,
           style: "destructive",
           onPress: () => {
             deleteTemplate(id);
@@ -43,7 +44,7 @@ export default function TemplatesScreen() {
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-gray-50">
       <View className="px-4 pb-3">
-        <Text className="text-xl font-bold text-gray-900">Plantillas</Text>
+        <Text className="text-xl font-bold text-gray-900">{LABELS.templates.screenTitle}</Text>
       </View>
 
       <FlatList
@@ -54,8 +55,8 @@ export default function TemplatesScreen() {
         ListEmptyComponent={
           <View className="items-center py-16 gap-2">
             <Text className="text-4xl">📋</Text>
-            <Text className="text-base font-medium text-gray-500">Sin plantillas</Text>
-            <Text className="text-sm text-gray-400">Usa el botón + para agregar una</Text>
+            <Text className="text-base font-medium text-gray-500">{LABELS.templates.emptyTitle}</Text>
+            <Text className="text-sm text-gray-400">{LABELS.templates.emptyHint}</Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -74,7 +75,7 @@ export default function TemplatesScreen() {
               onPress={() => confirmDelete(item.id, item.concept)}
               className="bg-red-50 px-4 items-center justify-center active:bg-red-100"
             >
-              <Text className="text-red-500 text-sm font-medium">Eliminar</Text>
+              <Text className="text-red-500 text-sm font-medium">{LABELS.common.delete}</Text>
             </Pressable>
           </Pressable>
         )}

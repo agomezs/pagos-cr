@@ -6,11 +6,12 @@ import { getClient, deactivateClient } from "../../../db/clients";
 import { listChargesByClient, unmarkPaid } from "../../../db/charges";
 import { formatColones, formatDate } from "../../../lib/format";
 import type { Client, Charge } from "../../../lib/types";
+import { LABELS } from "../../../constants/labels";
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: "Pendiente",
-  overdue: "Vencido",
-  paid: "Pagado",
+  pending: LABELS.status.pending,
+  overdue: LABELS.status.overdue,
+  paid: LABELS.status.paid,
 };
 
 const STATUS_COLOR: Record<string, string> = {
@@ -38,16 +39,16 @@ function ChargeRow({ charge, onUnmark }: { charge: Charge; onUnmark: (id: string
         </Text>
       </View>
       <View className="flex-row items-center justify-between">
-        <Text className="text-sm text-gray-500">Vence: {formatDate(charge.due_date)}</Text>
+        <Text className="text-sm text-gray-500">{LABELS.charges.duePrefix} {formatDate(charge.due_date)}</Text>
         <Text className="text-sm font-medium text-gray-700">{formatColones(charge.amount)}</Text>
       </View>
       {canPay && (
-        <Text className="text-xs text-blue-500 font-medium mt-0.5">Tocar para registrar pago →</Text>
+        <Text className="text-xs text-blue-500 font-medium mt-0.5">{LABELS.charges.tapToPayHint}</Text>
       )}
       {charge.status === "paid" && (
         <View className="flex-row items-center justify-between mt-0.5">
           <Text className="text-xs text-gray-400">
-            {charge.paid_at ? `Pagado el ${formatDate(charge.paid_at)}` : "Pagado"}
+            {charge.paid_at ? `${LABELS.charges.paidPrefix} ${formatDate(charge.paid_at)}` : LABELS.status.paid}
             {charge.payment_method ? ` · ${charge.payment_method.toUpperCase()}` : ""}
           </Text>
           <Pressable
@@ -55,7 +56,7 @@ function ChargeRow({ charge, onUnmark }: { charge: Charge; onUnmark: (id: string
             hitSlop={12}
             className="active:opacity-50"
           >
-            <Text className="text-xs text-red-400 font-medium">Revertir</Text>
+            <Text className="text-xs text-red-400 font-medium">{LABELS.charges.revertButton}</Text>
           </Pressable>
         </View>
       )}
@@ -102,12 +103,12 @@ export default function ClientDetailScreen() {
 
   function handleUnmark(chargeId: string) {
     Alert.alert(
-      "Revertir pago",
-      "¿Seguro? El cobro vuelve a pendiente y se borran los datos de pago.",
+      LABELS.charges.revertAlertTitle,
+      LABELS.charges.revertAlertMessage,
       [
-        { text: "Cancelar", style: "cancel" },
+        { text: LABELS.common.cancel, style: "cancel" },
         {
-          text: "Revertir",
+          text: LABELS.charges.revertButton,
           style: "destructive",
           onPress: () => {
             unmarkPaid(chargeId);
@@ -120,12 +121,12 @@ export default function ClientDetailScreen() {
 
   function handleDelete() {
     Alert.alert(
-      "Eliminar cliente",
-      `¿Desactivar a ${client?.name}? Sus cobros se conservarán.`,
+      LABELS.clients.deleteAlertTitle,
+      LABELS.clients.deleteAlertMessage(client?.name ?? ""),
       [
-        { text: "Cancelar", style: "cancel" },
+        { text: LABELS.common.cancel, style: "cancel" },
         {
-          text: "Eliminar",
+          text: LABELS.common.delete,
           style: "destructive",
           onPress: () => {
             deactivateClient(id);
@@ -152,13 +153,13 @@ export default function ClientDetailScreen() {
         </View>
         {client.phone ? (
           <View className="gap-0.5">
-            <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Teléfono</Text>
+            <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{LABELS.clients.fieldPhone}</Text>
             <Text className="text-base text-gray-700">{client.phone}</Text>
           </View>
         ) : null}
         {client.notes ? (
           <View className="gap-0.5">
-            <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Notas</Text>
+            <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{LABELS.clients.fieldNotes}</Text>
             <Text className="text-base text-gray-700">{client.notes}</Text>
           </View>
         ) : null}
@@ -169,7 +170,7 @@ export default function ClientDetailScreen() {
       <View className="gap-3">
         <View className="flex-row items-center justify-between">
           <Text className="text-base font-semibold text-gray-700">
-            Cobros {charges.length > 0 ? `(${charges.length})` : ""}
+            {LABELS.charges.sectionTitle} {charges.length > 0 ? `(${charges.length})` : ""}
           </Text>
           <Pressable
             onPress={() =>
@@ -180,14 +181,14 @@ export default function ClientDetailScreen() {
             }
             className="bg-blue-600 px-3 py-1.5 rounded-lg active:opacity-70"
           >
-            <Text className="text-white text-sm font-semibold">+ Nuevo cobro</Text>
+            <Text className="text-white text-sm font-semibold">{LABELS.charges.newButton}</Text>
           </Pressable>
         </View>
 
         {charges.length === 0 ? (
           <View className="bg-white rounded-2xl px-4 py-8 border border-gray-100 items-center gap-2">
             <Text className="text-3xl">📋</Text>
-            <Text className="text-sm text-gray-400">Sin cobros registrados</Text>
+            <Text className="text-sm text-gray-400">{LABELS.charges.emptyState}</Text>
           </View>
         ) : (
           <View className="gap-2">
@@ -203,7 +204,7 @@ export default function ClientDetailScreen() {
         onPress={handleDelete}
         className="rounded-xl py-4 items-center border border-red-200 active:opacity-70"
       >
-        <Text className="text-red-500 text-base font-semibold">Eliminar cliente</Text>
+        <Text className="text-red-500 text-base font-semibold">{LABELS.clients.deleteButton}</Text>
       </Pressable>
     </ScrollView>
   );

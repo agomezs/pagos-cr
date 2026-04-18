@@ -52,6 +52,10 @@ npm run web
 └── tsconfig.json            # TypeScript configuration
 ```
 
+## UI Labels
+
+All user-visible strings live in `constants/labels.ts`. Import `LABELS` and reference the appropriate key — do not hardcode Spanish strings in components.
+
 ## Notes
 
 - Use `--legacy-peer-deps` when installing packages due to peer dependency conflicts between NativeWind v4 and Gluestack UI v3.

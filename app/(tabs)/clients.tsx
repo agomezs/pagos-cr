@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { listClients } from "../../db/clients";
 import type { Client } from "../../lib/types";
+import { LABELS } from "../../constants/labels";
 
 function ClientRow({ client, onPress }: { client: Client; onPress: () => void }) {
   return (
@@ -46,7 +47,7 @@ export default function ClientsScreen() {
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-gray-50">
       <View className="px-4 pb-3">
-        <Text className="text-xl font-bold text-gray-900">Clientes</Text>
+        <Text className="text-xl font-bold text-gray-900">{LABELS.clients.screenTitle}</Text>
       </View>
 
       <FlatList
@@ -60,8 +61,8 @@ export default function ClientsScreen() {
         ListEmptyComponent={
           <View className="items-center py-16 gap-2">
             <Text className="text-4xl">👤</Text>
-            <Text className="text-base font-medium text-gray-500">Sin clientes</Text>
-            <Text className="text-sm text-gray-400">Usa el botón + para agregar uno</Text>
+            <Text className="text-base font-medium text-gray-500">{LABELS.clients.emptyTitle}</Text>
+            <Text className="text-sm text-gray-400">{LABELS.clients.emptyHint}</Text>
           </View>
         }
         contentContainerClassName="pt-2 pb-24"
