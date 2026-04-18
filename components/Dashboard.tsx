@@ -48,28 +48,31 @@ function seedIfEmpty() {
 // ---------------------------------------------------------------------------
 // SummaryPanel
 // ---------------------------------------------------------------------------
-type StatCardProps = { label: string; count: number; amount: number; color: string };
+type StatCardProps = { label: string; count: number; amount: number; bg: string; active?: boolean; onPress?: () => void };
 
-function StatCard({ label, count, amount, color }: StatCardProps) {
+function StatCard({ label, count, amount, bg, active, onPress }: StatCardProps) {
   return (
-    <View className={`flex-1 rounded-2xl p-4 gap-1 ${color}`}>
+    <Pressable
+      onPress={onPress}
+      style={{ flex: 1, borderRadius: 16, padding: 16, gap: 4, backgroundColor: bg, borderWidth: active ? 2 : 0, borderColor: "rgba(255,255,255,0.6)" }}
+    >
       <Text className="text-xs font-semibold text-white/80 uppercase tracking-wide">{label}</Text>
       <Text className="text-2xl font-bold text-white">{formatColones(amount)}</Text>
       <Text className="text-xs text-white/70">{count} cobro{count !== 1 ? "s" : ""}</Text>
-    </View>
+    </Pressable>
   );
 }
 
-function SummaryPanel({ summary }: { summary: Summary }) {
+function SummaryPanel({ summary, statusFilter, onStatusPress }: { summary: Summary; statusFilter: ChargeStatus | null; onStatusPress: (s: ChargeStatus) => void }) {
   return (
     <View className="px-4 pt-4 pb-2 gap-3">
       <Text className="text-xl font-bold text-gray-900">Resumen</Text>
       <View className="flex-row gap-3">
-        <StatCard label="Pendiente" count={summary.pendingCount} amount={summary.totalPending} color="bg-blue-500" />
-        <StatCard label="Vencido" count={summary.overdueCount} amount={summary.totalOverdue} color="bg-red-500" />
+        <StatCard label="Pendiente" count={summary.pendingCount} amount={summary.totalPending} bg="#3b82f6" active={statusFilter === "pending"} onPress={() => onStatusPress("pending")} />
+        <StatCard label="Vencido" count={summary.overdueCount} amount={summary.totalOverdue} bg="#ef4444" active={statusFilter === "overdue"} onPress={() => onStatusPress("overdue")} />
       </View>
       <View className="flex-row gap-3">
-        <StatCard label="Pagado" count={summary.paidCount} amount={summary.totalPaid} color="bg-green-600" />
+        <StatCard label="Pagado" count={summary.paidCount} amount={summary.totalPaid} bg="#16a34a" active={statusFilter === "paid"} onPress={() => onStatusPress("paid")} />
         <View className="flex-1 rounded-2xl p-4 bg-gray-100 gap-1 justify-center">
           <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Por cobrar</Text>
           <Text className="text-2xl font-bold text-gray-800">
@@ -257,7 +260,11 @@ export default function Dashboard() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         stickyHeaderIndices={[1]}
       >
-        <SummaryPanel summary={summary} />
+        <SummaryPanel
+          summary={summary}
+          statusFilter={statusFilter}
+          onStatusPress={(s) => setStatusFilter(statusFilter === s ? null : s)}
+        />
 
         {/* Sticky filter area */}
         <View className="bg-gray-50 border-b border-gray-100 pb-1">
