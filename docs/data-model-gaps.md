@@ -1,128 +1,118 @@
 # Data Model Gaps — Analysis
 
-**Context:** The current spec (pagos-phase-1.md) was designed for a simple client→charge model. The real student data reveals several structural gaps that need to be addressed before Slice 6 (CSV import).
+**Context:** The current spec (pagos-phase-1.md) was designed for a simple client→charge model. The real data reveals several gaps. This document captures the decisions made and the revised model.
 
-- The system is for a school now, but the data model could serve other contexts
-
----
-
-## 1. Students vs. Parents (billing entity mismatch)
-
-**Current model:** `clients` = the person who pays = the person being charged. One entity.
-
-**Reality:** The school tracks students, but **parents pay**. A parent can have multiple students (e.g. Lucas + Clarita Bayona Alpizar share the same parent and the charge ₡380,000 is one combined bill for both).
-
-**Options:**
-
-- **A) Keep clients = parents, add student names as notes.** Simple. Works for the current scale. Loses ability to filter/report by student.
-- **B) Add a `students` table, link many students to one client (parent).** Cleaner long-term. A charge belongs to a parent but can reference one or more students.
-
-**Recommendation: Option B.** Even at 20 parents, the operator thinks in terms of students (ClassDojo list is by student). The charge display should say "Lucas + Clarita" not just the parent name.
+- The system is for a school now, but the data model is designed to be generic
 
 ---
 
-## 2. Scholarship / Subsidy (IMAS)
+## 1. Billing entity (was: clients)
 
-**Current model:** `amount` on a charge is the full amount owed.
+The payer is not always a parent — it can be an institution, a sponsor, or any third party. Renamed to `contacts` to stay generic.
 
-**Reality:** Some students have a partial scholarship from IMAS. Their monthly charge is lower (₡131,000 vs ₡210,000 baseline). The operator needs to track:
-- Which students are IMAS-subsidized
-- That the reduced amount is the net amount owed by the parent (not the full tuition)
-
-**What we do NOT need (Phase 1):** tracking the IMAS disbursement separately or reconciling it with the school's income.
-
-**Change needed:** Add a `scholarship` flag or tag on the student/client record. The reduced amount flows naturally into the charge — no formula needed, the operator just sets the amount when creating the charge (or the template already reflects it).
-
-**Action:** Add a `scholarship_type TEXT` field on `clients` (or `students`). Values: `null` (none), `'imas'`, extensible. Use it as a display label, not for amount calculation.
+**Decision:** `clients` → `contacts`
 
 ---
 
-## 3. One-off Extras on Top of Fixed Monthly
+## 2. Charge structure (was: single amount per charge)
 
-**Current model:** templates pre-fill concept + amount, then the charge is independent.
+A charge can have multiple line items (monthly fee, ballet, materials). Each line is paid independently. The charge total is the sum of unpaid lines.
 
-**Reality:** Monthly tuition is fixed, but extras exist (uniforms, field trips, materials). These are:
-- Per-student, not per-parent
-- Added on top of the base monthly, or as separate charges
-- Not recurring — they appear when the school decides
-
-**No model change needed.** The current system handles this correctly: create a separate charge with its own concept and amount. The template catalog already supports a "Uniforme" or "Paseo" entry. The operator adds the charge manually when it applies.
-
-**Clarify in the UI:** the charge list per parent should group or label charges clearly so the operator can see "Mensualidad + Uniforme" for a given month.
+**Decision:** split into `charges` (header) + `charge_lines` (items)
 
 ---
 
-## 4. Grade / Classroom
+## 3. Line type (was: is_mensualidad)
 
-**Reality:** Students belong to a grade (6.º, 3.er, 2.º, 1.er, Jardín, Preescolar). This is useful for:
-- Filtering charges by grade (e.g. "show all Preescolar pending payments")
-- Bulk charge creation ("charge all Jardín students for May")
+Only recurring lines go overdue. One-off extras do not. Using a generic `type` field instead of a business-specific flag.
 
-**Change needed:** Add `grade TEXT` field on `students`. Not on clients — a parent with two kids in different grades needs both tracked.
+**Decision:** `type: recurring | extra` on `charge_lines` and `charge_templates`
 
 ---
 
-## 5. CSV Import Schema (revised)
+## 4. Charge status (was: operator-set)
 
-The current spec CSV schema was:
-```
-client_name, phone, concept, amount, due_date
-```
+Charge status is derived from its lines — not set manually.
 
-This is too flat for the real data. Proposed revised schema:
+**Decision:**
+- `pending` — at least one line is pending, none overdue
+- `overdue` — at least one recurring line is overdue
+- `paid` — all lines are paid
+
+---
+
+## 5. Monthly charge generation
+
+The operator does not create charges manually each month. The app generates them automatically based on which templates each contact has assigned.
+
+**Decision:** `contact_templates` join table links contacts to their recurring templates. Generation runs on a schedule or is triggered by the operator once per period.
+
+`charge_templates` is a catalog of reusable line definitions set up once by the operator:
 
 ```
-student_name, parent_name, phone, grade, scholarship, concept, amount, due_date
+charge_templates
+  t1  concept: "Tuition"   amount: 210000  type: recurring
+  t2  concept: "Ballet"    amount: 25000   type: extra
+  t3  concept: "Daycare"   amount: 40000   type: recurring
 ```
 
-- `student_name`: full name (used to create or match the student record)
-- `parent_name`: billing entity — if two rows share the same `parent_name` + `phone`, they link to the same parent
-- `phone`: optional
-- `grade`: e.g. `Preescolar`, `Jardín`, `1er`, etc.
-- `scholarship`: `imas` or blank
-- `concept`, `amount`, `due_date`: charge fields (can be blank for a student-only import with no initial charge)
+Each contact gets the templates that apply to them:
 
-**Alternative: Excel with two sheets**
+```
+contact_templates
+  Marco  ->  t1 (tuition)
+  Marco  ->  t2 (ballet)
+  Ana    ->  t1 (tuition)
+  Ana    ->  t3 (daycare)
+```
 
-| Sheet | Purpose |
-|---|---|
-| `Estudiantes` | student_name, parent_name, phone, grade, scholarship — one row per student |
-| `Cobros` | student_name (or parent_name), concept, amount, due_date — one row per charge |
+When the operator triggers "generate May charges" the app creates one charge per contact with one line per assigned template:
 
-The two-sheet approach is cleaner for the operator's existing workflow (she likely already has a student list separate from the monthly charge list) and avoids repeating parent/grade data per charge row.
+```
+Marco  ->  charge + line: Tuition 210000 + line: Ballet 25000
+Ana    ->  charge + line: Tuition 210000 + line: Daycare 40000
+```
 
-**Recommendation: Excel with two sheets.** The operator can maintain the student sheet as her master list and only touch the charges sheet each month.
-
----
-
-## 6. Summary of Model Changes
-
-| Entity | Change |
-|---|---|
-| `clients` | Rename conceptually to "parents/guardians". Add `scholarship_type` if we don't add a students table. |
-| `students` (new) | `id`, `client_id` (parent FK), `name`, `grade`, `scholarship_type`, `active`, timestamps |
-| `charges` | Add optional `student_id` FK (a charge can be for one student, multiple students, or the parent directly) |
-| Templates | No change — they remain concept + amount seeds |
+The template is only a seed — once the line is created it is independent. The operator can adjust the amount before confirming (e.g. Marco's tuition is 380000 for two kids, not the base 210000).
 
 ---
 
-## 7. What to Decide Before Slice 6
+## 6. Recipient names on lines
 
-1. **Students as a first-class entity?** (Recommended: yes, add `students` table)
-2. **One charge per student or per parent per month?** (Recommendation: per parent, but display student names on the charge)
-3. **Excel vs flat CSV for import?** (Recommendation: Excel two-sheet)
-4. **Does the operator want to filter the dashboard by grade?** (If yes, grade on students is essential)
+No `beneficiaries` table in Phase 1. Recipient names are free text on the line (`description`).
+
+**Decision:** `description TEXT` on `charge_lines` — e.g. "Lucas + Clarita"
+
+**Future:** a `beneficiaries` table enables per-student reporting, grade filtering, and the Phase 5 client portal.
 
 ---
 
-## 8. Proposed Model — Entity Diagram
+## 7. Import format
+
+Two-sheet Excel: one sheet for contacts, one for the initial charge lines. The operator maintains the contacts sheet as her master list.
+
+**Proposed schema:**
+
+```
+Sheet 1 — Contacts
+  name, phone, notes
+
+Sheet 2 — Charge lines
+  contact_name, concept, description, amount, type, due_date
+```
+
+---
+
+## 8. Entity Diagram
 
 ### High level
 
 ```
 contacts ──────────< charges
-                        |
-                        └──────< charge_lines
+    |                   |
+    |                   └──────< charge_lines
+    |
+    └──────< contact_templates >──────── charge_templates
 ```
 
 ### Expanded
@@ -141,30 +131,30 @@ contacts                        charge_templates
         |                       +---------------------------+
         | *                     | id                        |
 +------------------+            | contact_id (FK)           |
-| charges          |────────────| template_id (FK)          |
+| charges          |            | template_id (FK)          |
 +------------------+            | active                    |
 | id               |            +---------------------------+
 | contact_id (FK)  |
 | due_date         |
-| status           |
+| status           |  ← derived: pending | overdue | paid
 +------------------+
         |
         | 1
         |
         | *
-+------------------+
-| charge_lines     |
-+------------------+
-| id               |
-| charge_id (FK)   |
-| concept          |
-| amount           |
-| description      |  ← free text e.g. "Lucas + Clarita"
-| type             |  ← recurring | extra
-| status           |
-| payment_method   |
-| paid_at          |
-+------------------+
++---------------------+
+| charge_lines        |
++---------------------+
+| id                  |
+| charge_id (FK)      |
+| concept             |
+| amount              |
+| description         |  ← free text e.g. "Lucas + Clarita"
+| type                |  ← recurring | extra
+| status              |  ← pending | overdue | paid
+| payment_method      |
+| paid_at             |
++---------------------+
 ```
 
 ### Example — Marco, May 2026
@@ -172,21 +162,38 @@ contacts                        charge_templates
 ```
 contact:  Marco  +506 8888-1111
 charge:   due 2026-05-02  status: pending
-  line 1  Mensualidad  "Lucas + Clarita"  ₡380,000  recurring  [pending]
-  line 2  Ballet       "Clarita"           ₡25,000  extra      [pending]
-  total pending: ₡405,000
+  line 1  tuition  "Lucas + Clarita"  380000  recurring  [pending]
+  line 2  ballet   "Clarita"           25000  extra      [pending]
+  total pending: 405000
 
-after paying line 1 via SINPE:
-  line 1  [paid 2026-05-03]
+after paying line 1:
+  line 1  [paid 2026-05-03  sinpe]
   line 2  [pending]
-  total pending: ₡25,000
+  total pending: 25000
 ```
 
-**Key rules:**
+### Key rules
+
 - A charge belongs to a `contact`; recipient names are free text in `description`
 - Each `charge_line` is paid independently; no partial payment within a line
 - Only `recurring` lines go overdue; `extra` lines do not
-- `contact_templates` drives monthly bulk charge generation
+- Charge `status` is derived from its lines — never set manually
+- `contact_templates` + `charge_templates` drive automatic monthly generation -- The generation is phase one only and should be updated later to something better/
 
-**Future (not Phase 1):** a `beneficiaries` table linked to `contacts` enables
-per-student reporting, grade filtering, and the Phase 5 client portal.
+## implementation order:
+                                
+  1. Schema — new database.ts with contacts, charges,
+  charge_lines, charge_templates (with type),            
+  contact_templates
+  2. Seed data — a handful of contacts with assigned     
+  templates so every screen has something to show        
+  3. DB modules — rewrite contacts.ts, charges.ts, new
+  chargeLines.ts, update chargeTemplates.ts              
+  4. Rename clients → contacts throughout (screens,
+  labels, routes)                                        
+  5. Contact templates UI — assign/remove templates on
+  the contact detail screen                              
+  6. Generation screen — picker → preview with editable
+  amounts → confirm                                      
+  7. Dashboard + charge display — adapt to the new
+  charge+lines model (show line breakdown, per-line pay)
