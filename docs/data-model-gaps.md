@@ -112,3 +112,81 @@ The two-sheet approach is cleaner for the operator's existing workflow (she like
 2. **One charge per student or per parent per month?** (Recommendation: per parent, but display student names on the charge)
 3. **Excel vs flat CSV for import?** (Recommendation: Excel two-sheet)
 4. **Does the operator want to filter the dashboard by grade?** (If yes, grade on students is essential)
+
+---
+
+## 8. Proposed Model — Entity Diagram
+
+### High level
+
+```
+contacts ──────────< charges
+                        |
+                        └──────< charge_lines
+```
+
+### Expanded
+
+```
+contacts                        charge_templates
++------------------+            +---------------------------+
+| id               |            | id                        |
+| name             |            | concept                   |
+| phone            |            | amount                    |
+| notes            |            | type: recurring | extra    |
+| active           |            +---------------------------+
++------------------+                      |
+        |                                 |
+        | 1                     contact_templates
+        |                       +---------------------------+
+        | *                     | id                        |
++------------------+            | contact_id (FK)           |
+| charges          |────────────| template_id (FK)          |
++------------------+            | active                    |
+| id               |            +---------------------------+
+| contact_id (FK)  |
+| due_date         |
+| status           |
++------------------+
+        |
+        | 1
+        |
+        | *
++------------------+
+| charge_lines     |
++------------------+
+| id               |
+| charge_id (FK)   |
+| concept          |
+| amount           |
+| description      |  ← free text e.g. "Lucas + Clarita"
+| type             |  ← recurring | extra
+| status           |
+| payment_method   |
+| paid_at          |
++------------------+
+```
+
+### Example — Marco, May 2026
+
+```
+contact:  Marco  +506 8888-1111
+charge:   due 2026-05-02  status: pending
+  line 1  Mensualidad  "Lucas + Clarita"  ₡380,000  recurring  [pending]
+  line 2  Ballet       "Clarita"           ₡25,000  extra      [pending]
+  total pending: ₡405,000
+
+after paying line 1 via SINPE:
+  line 1  [paid 2026-05-03]
+  line 2  [pending]
+  total pending: ₡25,000
+```
+
+**Key rules:**
+- A charge belongs to a `contact`; recipient names are free text in `description`
+- Each `charge_line` is paid independently; no partial payment within a line
+- Only `recurring` lines go overdue; `extra` lines do not
+- `contact_templates` drives monthly bulk charge generation
+
+**Future (not Phase 1):** a `beneficiaries` table linked to `contacts` enables
+per-student reporting, grade filtering, and the Phase 5 client portal.
