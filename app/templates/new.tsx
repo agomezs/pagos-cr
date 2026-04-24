@@ -13,11 +13,13 @@ import { useRouter } from "expo-router";
 import ScreenHeader from "../../components/ScreenHeader";
 import { createTemplate } from "../../db/chargeTemplates";
 import { LABELS } from "../../constants/labels";
+import type { LineType } from "../../lib/types";
 
 export default function NewTemplateScreen() {
   const router = useRouter();
   const [concept, setConcept] = useState("");
   const [amount, setAmount] = useState("");
+  const [type, setType] = useState<LineType>("recurring");
   const [error, setError] = useState<string | null>(null);
 
   function validate(): string | null {
@@ -35,6 +37,7 @@ export default function NewTemplateScreen() {
       id: ExpoCrypto.randomUUID(),
       concept: concept.trim(),
       amount: parseInt(amount, 10),
+      type,
     });
     router.back();
   }
@@ -49,6 +52,7 @@ export default function NewTemplateScreen() {
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="p-4 gap-6">
         <ScreenHeader title={LABELS.templates.newTitle} onBack={() => router.back()} />
 
+        {/* Concepto */}
         <View className="gap-1.5">
           <Text className="text-sm font-semibold text-gray-700">
             {LABELS.templates.fieldConcept} <Text className="text-red-500">*</Text>
@@ -64,6 +68,7 @@ export default function NewTemplateScreen() {
           />
         </View>
 
+        {/* Monto */}
         <View className="gap-1.5">
           <Text className="text-sm font-semibold text-gray-700">
             {LABELS.templates.fieldAmount} <Text className="text-red-500">*</Text>
@@ -79,12 +84,29 @@ export default function NewTemplateScreen() {
           />
         </View>
 
+        {/* Tipo */}
+        <View className="gap-2">
+          <Text className="text-sm font-semibold text-gray-700">{LABELS.templates.fieldType}</Text>
+          <View className="flex-row gap-2">
+            {([["recurring", LABELS.templates.typeRecurring], ["extra", LABELS.templates.typeExtra]] as const).map(([val, label]) => (
+              <Pressable
+                key={val}
+                onPress={() => setType(val)}
+                className={`flex-1 py-3 rounded-xl items-center border ${type === val ? "bg-blue-600 border-blue-600" : "bg-white border-gray-200"} active:opacity-70`}
+              >
+                <Text className={`text-sm font-semibold ${type === val ? "text-white" : "text-gray-700"}`}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
         {error && (
           <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
             <Text className="text-red-600 text-sm">{error}</Text>
           </View>
         )}
 
+        {/* Guardar */}
         <Pressable
           onPress={handleSave}
           disabled={!canSave}

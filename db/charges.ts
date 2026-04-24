@@ -1,27 +1,60 @@
 import { getDb } from './database';
-import type { Charge, ChargeFilters, Summary } from '../lib/types';
+import type { Charge, ChargeFilters, ChargeLine, Summary } from '../lib/types';
+import { CHARGE_STATUS } from '../constants/enums';
 
-/**
- * Marks overdue charges (pending where due_date < today).
- * Call this when the dashboard loads.
- */
+// Derives charge status from its lines and updates the DB.
+function syncChargeStatus(db: ReturnType<typeof getDb>, charge_id: string): void {
+  const now = new Date().toISOString();
+  db.runSync(
+    `UPDATE charges SET status = (
+       CASE
+         WHEN EXISTS (SELECT 1 FROM charge_lines WHERE charge_id = ? AND status = 'overdue') THEN 'overdue'
+         WHEN NOT EXISTS (SELECT 1 FROM charge_lines WHERE charge_id = ? AND status != 'paid') THEN 'paid'
+         ELSE 'pending'
+       END
+     ), updated_at = ?
+     WHERE id = ?`,
+    charge_id,
+    charge_id,
+    now,
+    charge_id,
+  );
+}
+
+// Marks recurring lines overdue for all charges past due date, then syncs charge status.
 export function markOverdue(): void {
   const db = getDb();
   const now = new Date().toISOString();
   db.runSync(
-    `UPDATE charges SET status = 'overdue', updated_at = ?
-     WHERE status = 'pending' AND due_date < date('now')`,
+    `UPDATE charge_lines SET status = 'overdue', updated_at = ?
+     WHERE status = 'pending' AND type = 'recurring'
+       AND charge_id IN (SELECT id FROM charges WHERE due_date < date('now'))`,
     now,
   );
+  // Sync all charge statuses that may have changed
+  const stale = db.getAllSync<{ id: string }>(
+    `SELECT DISTINCT c.id FROM charges c
+     JOIN charge_lines cl ON cl.charge_id = c.id
+     WHERE c.status != 'paid' AND c.due_date < date('now')`,
+  );
+  for (const { id } of stale) {
+    syncChargeStatus(db, id);
+  }
 }
 
-/**
- * Returns totals grouped by status.
- */
 export function getSummary(): Summary {
   const db = getDb();
   const rows = db.getAllSync<{ status: string; count: number; total: number }>(
-    `SELECT status, COUNT(*) as count, SUM(amount) as total FROM charges GROUP BY status`,
+    `SELECT c.status, COUNT(DISTINCT c.id) as count, SUM(cl.amount) as total
+     FROM charges c
+     JOIN charge_lines cl ON cl.charge_id = c.id AND cl.status != 'paid'
+     WHERE c.status != 'paid'
+     GROUP BY c.status
+     UNION ALL
+     SELECT 'paid', COUNT(DISTINCT c.id), SUM(cl.amount)
+     FROM charges c
+     JOIN charge_lines cl ON cl.charge_id = c.id AND cl.status = 'paid'
+     WHERE c.status = 'paid'`,
   );
 
   const summary: Summary = {
@@ -34,13 +67,13 @@ export function getSummary(): Summary {
   };
 
   for (const row of rows) {
-    if (row.status === 'pending') {
+    if (row.status === CHARGE_STATUS.pending) {
       summary.totalPending = row.total ?? 0;
       summary.pendingCount = row.count;
-    } else if (row.status === 'overdue') {
+    } else if (row.status === CHARGE_STATUS.overdue) {
       summary.totalOverdue = row.total ?? 0;
       summary.overdueCount = row.count;
-    } else if (row.status === 'paid') {
+    } else if (row.status === CHARGE_STATUS.paid) {
       summary.totalPaid = row.total ?? 0;
       summary.paidCount = row.count;
     }
@@ -49,98 +82,75 @@ export function getSummary(): Summary {
   return summary;
 }
 
-/**
- * Returns charges with optional filters, joined with client name.
- */
 export function listCharges(filters: ChargeFilters = {}): Charge[] {
   const db = getDb();
-
-  const rows = db.getAllSync<Charge>(
-    `SELECT c.*, cl.name as client_name
+  const rows = db.getAllSync<Omit<Charge, 'lines'>>(
+    `SELECT c.*, co.name as contact_name
      FROM charges c
-     JOIN clients cl ON c.client_id = cl.id
+     JOIN contacts co ON c.contact_id = co.id
      WHERE (? IS NULL OR c.status = ?)
-       AND (? IS NULL OR c.client_id = ?)
+       AND (? IS NULL OR c.contact_id = ?)
        AND (? IS NULL OR c.due_date >= ?)
        AND (? IS NULL OR c.due_date <= ?)
      ORDER BY
        CASE c.status WHEN 'overdue' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END,
        CASE WHEN c.status IN ('overdue', 'pending') THEN c.due_date END ASC,
-       CASE WHEN c.status = 'paid' THEN c.paid_at END DESC`,
+       CASE WHEN c.status = 'paid' THEN c.due_date END DESC`,
     filters.status ?? null,
     filters.status ?? null,
-    filters.client_id ?? null,
-    filters.client_id ?? null,
+    filters.contact_id ?? null,
+    filters.contact_id ?? null,
     filters.date_from ?? null,
     filters.date_from ?? null,
     filters.date_to ?? null,
     filters.date_to ?? null,
   );
 
-  return rows;
+  return rows.map((r) => ({
+    ...r,
+    lines: db.getAllSync<ChargeLine>(
+      `SELECT * FROM charge_lines WHERE charge_id = ? ORDER BY created_at ASC`,
+      r.id,
+    ),
+  }));
 }
 
-/**
- * Returns all charges for a specific client, ordered by due_date ASC.
- */
-export function listChargesByClient(client_id: string): Charge[] {
+export function listChargesByContact(contact_id: string): Charge[] {
   const db = getDb();
-  const rows = db.getAllSync<Charge>(
-    `SELECT c.*, cl.name as client_name
+  const rows = db.getAllSync<Omit<Charge, 'lines'>>(
+    `SELECT c.*, co.name as contact_name
      FROM charges c
-     JOIN clients cl ON c.client_id = cl.id
-     WHERE c.client_id = ?
-     ORDER BY c.due_date ASC`,
-    client_id,
+     JOIN contacts co ON c.contact_id = co.id
+     WHERE c.contact_id = ?
+     ORDER BY c.due_date DESC`,
+    contact_id,
   );
-  return rows;
+
+  return rows.map((r) => ({
+    ...r,
+    lines: db.getAllSync<ChargeLine>(
+      `SELECT * FROM charge_lines WHERE charge_id = ? ORDER BY created_at ASC`,
+      r.id,
+    ),
+  }));
 }
 
-export function createCharge(charge: Omit<Charge, 'status' | 'payment_method' | 'payment_note' | 'paid_at' | 'created_at' | 'updated_at' | 'client_name'>): void {
+export function createCharge(charge: { id: string; contact_id: string; due_date: string }): void {
   const db = getDb();
   const now = new Date().toISOString();
   db.runSync(
-    `INSERT INTO charges (id, client_id, concept, amount, due_date, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)`,
+    `INSERT INTO charges (id, contact_id, due_date, status, created_at, updated_at)
+     VALUES (?, ?, ?, 'pending', ?, ?)`,
     charge.id,
-    charge.client_id,
-    charge.concept,
-    charge.amount,
+    charge.contact_id,
     charge.due_date,
     now,
     now,
   );
 }
 
-export function unmarkPaid(id: string): void {
+// Called after marking a line paid/unpaid to keep charge status in sync.
+export function refreshChargeStatus(charge_id: string): void {
   const db = getDb();
-  const now = new Date().toISOString();
-  db.runSync(
-    `UPDATE charges
-     SET status = CASE WHEN due_date < date('now') THEN 'overdue' ELSE 'pending' END,
-         payment_method = NULL, payment_note = NULL, paid_at = NULL, updated_at = ?
-     WHERE id = ? AND status = 'paid'`,
-    now,
-    id,
-  );
-}
-
-export function markPaid(
-  id: string,
-  payment_method: 'sinpe' | 'transfer' | 'cash',
-  payment_note: string | null,
-  paid_at: string,
-): void {
-  const db = getDb();
-  const now = new Date().toISOString();
-  db.runSync(
-    `UPDATE charges
-     SET status = 'paid', payment_method = ?, payment_note = ?, paid_at = ?, updated_at = ?
-     WHERE id = ? AND status IN ('pending', 'overdue')`,
-    payment_method,
-    payment_note ?? null,
-    paid_at,
-    now,
-    id,
-  );
+  syncChargeStatus(db, charge_id);
 }

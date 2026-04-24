@@ -4,39 +4,30 @@ import { formatColones, formatDate } from "../../lib/format";
 import type { Charge, ChargeStatus } from "../../lib/types";
 import { LABELS } from "../../constants/labels";
 
-const PAYMENT_METHOD_LABEL: Record<string, string> = {
-  sinpe: LABELS.paymentMethod.sinpe,
-  efectivo: LABELS.paymentMethod.cash,
-  transferencia: LABELS.paymentMethod.transfer,
-  transfer: LABELS.paymentMethod.transfer,
-  cash: LABELS.paymentMethod.cash,
-};
-
 const STATUS_STYLE: Record<ChargeStatus, { badge: string; text: string; label: string }> = {
-  pending: { badge: "bg-blue-100", text: "text-blue-700", label: LABELS.status.pending },
-  overdue: { badge: "bg-red-100",  text: "text-red-700",  label: LABELS.status.overdue },
+  pending: { badge: "bg-blue-100",  text: "text-blue-700",  label: LABELS.status.pending },
+  overdue: { badge: "bg-red-100",   text: "text-red-700",   label: LABELS.status.overdue },
   paid:    { badge: "bg-green-100", text: "text-green-700", label: LABELS.status.paid },
 };
 
 export function ChargeCard({ charge }: { charge: Charge }) {
   const router = useRouter();
   const style = STATUS_STYLE[charge.status];
-  const canPay = charge.status === "pending" || charge.status === "overdue";
+  const lines = charge.lines ?? [];
+  const unpaidTotal = lines.filter((l) => l.status !== "paid").reduce((s, l) => s + l.amount, 0);
+  const displayAmount = charge.status === "paid"
+    ? lines.reduce((s, l) => s + l.amount, 0)
+    : unpaidTotal;
+
+  const firstLineConcept = lines[0]?.concept ?? "";
+  const extraCount = lines.length - 1;
+
+  const paidLine = charge.status === "paid"
+    ? lines.find((l) => l.paid_at)
+    : null;
 
   function handlePress() {
-    if (canPay) {
-      router.push({
-        pathname: "/charges/[id]/pay",
-        params: {
-          id: charge.id,
-          concept: charge.concept,
-          amount: String(charge.amount),
-          client_name: charge.client_name ?? "",
-        },
-      });
-    } else {
-      router.push(`/clients/${charge.client_id}`);
-    }
+    router.push(`/contacts/${charge.contact_id}`);
   }
 
   return (
@@ -47,10 +38,10 @@ export function ChargeCard({ charge }: { charge: Charge }) {
       <View className="flex-row items-start justify-between gap-2">
         <View className="flex-1 gap-0.5">
           <Text className="text-base font-semibold text-gray-900" numberOfLines={1}>
-            {charge.client_name}
+            {charge.contact_name}
           </Text>
           <Text className="text-sm text-gray-500" numberOfLines={1}>
-            {charge.concept}
+            {firstLineConcept}{extraCount > 0 ? ` +${extraCount}` : ""}
           </Text>
         </View>
         <View className={`px-2.5 py-1 rounded-full ${style.badge}`}>
@@ -61,16 +52,13 @@ export function ChargeCard({ charge }: { charge: Charge }) {
       <View className="mt-3 flex-row items-end justify-between">
         <View className="gap-0.5">
           <Text className="text-xs text-gray-400">
-            {charge.status === "paid" && charge.paid_at
-              ? `${LABELS.charges.paidPrefix} ${formatDate(charge.paid_at)}`
+            {paidLine?.paid_at
+              ? `${LABELS.charges.paidPrefix} ${formatDate(paidLine.paid_at)}`
               : `${LABELS.charges.duePrefixShort} ${formatDate(charge.due_date)}`}
           </Text>
-          {charge.payment_method && (
-            <Text className="text-xs text-gray-400">{PAYMENT_METHOD_LABEL[charge.payment_method] ?? charge.payment_method}</Text>
-          )}
         </View>
         <View className="flex-row items-center gap-1.5">
-          <Text className="text-lg font-bold text-gray-900">{formatColones(charge.amount)}</Text>
+          <Text className="text-lg font-bold text-gray-900">{formatColones(displayAmount)}</Text>
           <Text className="text-gray-300 text-base">›</Text>
         </View>
       </View>

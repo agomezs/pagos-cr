@@ -1,4 +1,4 @@
-export type Client = {
+export type Contact = {
   id: string;
   name: string;
   phone: string | null;
@@ -10,21 +10,53 @@ export type Client = {
 
 export type ChargeStatus = 'pending' | 'overdue' | 'paid';
 export type PaymentMethod = 'sinpe' | 'transfer' | 'cash';
+export type LineType = 'recurring' | 'extra';
 
-export type Charge = {
+export type ChargeLine = {
   id: string;
-  client_id: string;
+  charge_id: string;
   concept: string;
   amount: number;
-  due_date: string;
+  description: string | null;
+  type: LineType;
   status: ChargeStatus;
   payment_method: PaymentMethod | null;
-  payment_note: string | null;
   paid_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type Charge = {
+  id: string;
+  contact_id: string;
+  due_date: string;
+  status: ChargeStatus;
+  created_at: string;
+  updated_at: string;
   // joined
-  client_name?: string;
+  contact_name?: string;
+  lines?: ChargeLine[];
+};
+
+export type ChargeTemplate = {
+  id: string;
+  concept: string;
+  amount: number;
+  type: LineType;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ContactTemplate = {
+  id: string;
+  contact_id: string;
+  template_id: string;
+  active: boolean;
+  created_at: string;
+  // joined
+  concept?: string;
+  amount?: number;
+  type?: LineType;
 };
 
 export type Summary = {
@@ -38,15 +70,7 @@ export type Summary = {
 
 export type ChargeFilters = {
   status?: ChargeStatus | null;
-  client_id?: string | null;
+  contact_id?: string | null;
   date_from?: string | null;
   date_to?: string | null;
-};
-
-export type ChargeTemplate = {
-  id: string;
-  concept: string;
-  amount: number;
-  created_at: string;
-  updated_at: string;
 };

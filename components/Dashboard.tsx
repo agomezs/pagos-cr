@@ -8,11 +8,14 @@ import {
   Text,
   View,
 } from "react-native";
-import { markOverdue, getSummary, listCharges, createCharge } from "../db/charges";
-import { createClient, listClients } from "../db/clients";
+import { markOverdue, getSummary, listCharges } from "../db/charges";
+import { listContacts, createContact } from "../db/contacts";
+import { createCharge } from "../db/charges";
+import { createLine } from "../db/chargeLines";
+import { createTemplate } from "../db/chargeTemplates";
 import { getDb } from "../db/database";
 import { formatColones } from "../lib/format";
-import type { Charge, ChargeStatus, Client, Summary } from "../lib/types";
+import type { Charge, ChargeStatus, Contact, Summary } from "../lib/types";
 import { ChargeCard } from "./dashboard/ChargeCard";
 import { ClientPickerModal } from "./dashboard/ClientPickerModal";
 import { LABELS } from "../constants/labels";
@@ -21,28 +24,50 @@ import { LABELS } from "../constants/labels";
 // Seed helper — inserts demo data on first run
 // ---------------------------------------------------------------------------
 function seedIfEmpty() {
-  const clients = listClients();
-  if (clients.length > 0) return;
+  const contacts = listContacts();
+  if (contacts.length > 0) return;
 
   const c1 = { id: "c1", name: "Ana Rodríguez", phone: "88001234", notes: null };
   const c2 = { id: "c2", name: "Luis Pérez", phone: "88005678", notes: null };
   const c3 = { id: "c3", name: "María Castro", phone: null, notes: null };
+  createContact(c1);
+  createContact(c2);
+  createContact(c3);
 
-  createClient(c1);
-  createClient(c2);
-  createClient(c3);
+  createTemplate({ id: "t1", concept: "Mensualidad", amount: 210000, type: "recurring" });
+  createTemplate({ id: "t2", concept: "Ballet", amount: 25000, type: "extra" });
+  createTemplate({ id: "t3", concept: "Guardería", amount: 40000, type: "recurring" });
 
-  createCharge({ id: "co1", client_id: "c1", concept: "Mensualidad mayo", amount: 35000, due_date: "2026-05-01" });
-  createCharge({ id: "co2", client_id: "c2", concept: "Mensualidad mayo", amount: 35000, due_date: "2026-05-01" });
-  createCharge({ id: "co3", client_id: "c3", concept: "Mensualidad mayo", amount: 40000, due_date: "2026-05-15" });
-  createCharge({ id: "co4", client_id: "c1", concept: "Mensualidad abril", amount: 35000, due_date: "2026-04-01" });
-  createCharge({ id: "co5", client_id: "c3", concept: "Mensualidad marzo", amount: 40000, due_date: "2026-03-01" });
-  createCharge({ id: "co6", client_id: "c2", concept: "Mensualidad abril", amount: 35000, due_date: "2026-04-01" });
+  // May charge: Ana — tuition + ballet
+  createCharge({ id: "ch1", contact_id: "c1", due_date: "2026-05-02" });
+  createLine({ id: "l1", charge_id: "ch1", concept: "Mensualidad mayo", amount: 380000, description: "Lucas + Clarita", type: "recurring" });
+  createLine({ id: "l2", charge_id: "ch1", concept: "Ballet", amount: 25000, description: "Clarita", type: "extra" });
+
+  // May charge: Luis — tuition
+  createCharge({ id: "ch2", contact_id: "c2", due_date: "2026-05-02" });
+  createLine({ id: "l3", charge_id: "ch2", concept: "Mensualidad mayo", amount: 210000, description: null, type: "recurring" });
+
+  // May charge: María — tuition + daycare
+  createCharge({ id: "ch3", contact_id: "c3", due_date: "2026-05-15" });
+  createLine({ id: "l4", charge_id: "ch3", concept: "Mensualidad mayo", amount: 210000, description: null, type: "recurring" });
+  createLine({ id: "l5", charge_id: "ch3", concept: "Guardería mayo", amount: 40000, description: null, type: "recurring" });
+
+  // April charge: Ana — past due
+  createCharge({ id: "ch4", contact_id: "c1", due_date: "2026-04-02" });
+  createLine({ id: "l6", charge_id: "ch4", concept: "Mensualidad abril", amount: 380000, description: "Lucas + Clarita", type: "recurring" });
+
+  // April charge: Luis — already paid
+  createCharge({ id: "ch5", contact_id: "c2", due_date: "2026-04-02" });
+  createLine({ id: "l7", charge_id: "ch5", concept: "Mensualidad abril", amount: 210000, description: null, type: "recurring" });
 
   const db = getDb();
   const now = new Date().toISOString();
   db.runSync(
-    `UPDATE charges SET status='paid', payment_method='sinpe', paid_at='2026-04-02', updated_at=? WHERE id='co6'`,
+    `UPDATE charge_lines SET status='paid', payment_method='sinpe', paid_at='2026-04-03', updated_at=? WHERE id='l7'`,
+    now,
+  );
+  db.runSync(
+    `UPDATE charges SET status='paid', updated_at=? WHERE id='ch5'`,
     now,
   );
 }
@@ -134,7 +159,7 @@ function StatusSegmentedControl({
 }
 
 // ---------------------------------------------------------------------------
-// SecondaryFilterRow — client chip + date range chips
+// SecondaryFilterRow
 // ---------------------------------------------------------------------------
 function toISO(date: Date): string {
   const y = date.getFullYear();
@@ -155,18 +180,18 @@ const QUICK_RANGES: { label: string; from: string; to: string }[] = (() => {
 })();
 
 function SecondaryFilterRow({
-  clientFilter,
+  contactFilter,
   dateFrom,
   dateTo,
-  selectedClient,
-  onClientPress,
+  selectedContact,
+  onContactPress,
   onDateRange,
 }: {
-  clientFilter: string | null;
+  contactFilter: string | null;
   dateFrom: string | null;
   dateTo: string | null;
-  selectedClient: Client | null;
-  onClientPress: () => void;
+  selectedContact: Contact | null;
+  onContactPress: () => void;
   onDateRange: (from: string | null, to: string | null) => void;
 }) {
   return (
@@ -175,18 +200,18 @@ function SecondaryFilterRow({
       showsHorizontalScrollIndicator={false}
       contentContainerClassName="px-4 py-2 gap-2 items-center"
     >
-      {/* Client chip */}
+      {/* Contact chip */}
       <Pressable
-        onPress={onClientPress}
+        onPress={onContactPress}
         className={`flex-row items-center gap-1 px-3.5 py-1.5 rounded-full border ${
-          clientFilter ? "bg-indigo-600 border-indigo-600" : "bg-white border-gray-300"
+          contactFilter ? "bg-indigo-600 border-indigo-600" : "bg-white border-gray-300"
         } active:opacity-70`}
       >
-        <Text className={`text-sm font-semibold ${clientFilter ? "text-white" : "text-gray-600"}`}>
-          {selectedClient ? selectedClient.name : LABELS.dashboard.filterClient}
+        <Text className={`text-sm font-semibold ${contactFilter ? "text-white" : "text-gray-600"}`}>
+          {selectedContact ? selectedContact.name : LABELS.dashboard.filterContact}
         </Text>
-        <Text className={`text-xs ${clientFilter ? "text-white/70" : "text-gray-400"}`}>
-          {clientFilter ? "✕" : "▾"}
+        <Text className={`text-xs ${contactFilter ? "text-white/70" : "text-gray-400"}`}>
+          {contactFilter ? "✕" : "▾"}
         </Text>
       </Pressable>
 
@@ -224,25 +249,25 @@ export default function Dashboard() {
     paidCount: 0,
   });
   const [charges, setCharges] = useState<Charge[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [statusFilter, setStatusFilter] = useState<ChargeStatus | null>(null);
-  const [clientFilter, setClientFilter] = useState<string | null>(null);
+  const [contactFilter, setContactFilter] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState<string | null>(null);
   const [dateTo, setDateTo] = useState<string | null>(null);
-  const [showClientPicker, setShowClientPicker] = useState(false);
+  const [showContactPicker, setShowContactPicker] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const selectedClient = clients.find((c) => c.id === clientFilter) ?? null;
+  const selectedContact = contacts.find((c) => c.id === contactFilter) ?? null;
 
   const load = useCallback(() => {
     markOverdue();
     setSummary(getSummary());
-    setCharges(listCharges({ status: statusFilter, client_id: clientFilter, date_from: dateFrom, date_to: dateTo }));
-  }, [statusFilter, clientFilter, dateFrom, dateTo]);
+    setCharges(listCharges({ status: statusFilter, contact_id: contactFilter, date_from: dateFrom, date_to: dateTo }));
+  }, [statusFilter, contactFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     seedIfEmpty();
-    setClients(listClients());
+    setContacts(listContacts());
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -253,7 +278,7 @@ export default function Dashboard() {
     setRefreshing(false);
   }, [load]);
 
-  const hasFilters = statusFilter !== null || clientFilter !== null || dateFrom !== null || dateTo !== null;
+  const hasFilters = statusFilter !== null || contactFilter !== null || dateFrom !== null || dateTo !== null;
 
   return (
     <View className="flex-1">
@@ -272,11 +297,11 @@ export default function Dashboard() {
         <View className="bg-gray-50 border-b border-gray-100 pb-1">
           <StatusSegmentedControl active={statusFilter} onChange={setStatusFilter} />
           <SecondaryFilterRow
-            clientFilter={clientFilter}
+            contactFilter={contactFilter}
             dateFrom={dateFrom}
             dateTo={dateTo}
-            selectedClient={selectedClient}
-            onClientPress={() => clientFilter ? setClientFilter(null) : setShowClientPicker(true)}
+            selectedContact={selectedContact}
+            onContactPress={() => contactFilter ? setContactFilter(null) : setShowContactPicker(true)}
             onDateRange={(from, to) => { setDateFrom(from); setDateTo(to); }}
           />
         </View>
@@ -289,7 +314,7 @@ export default function Dashboard() {
               <Pressable
                 onPress={() => {
                   setStatusFilter(null);
-                  setClientFilter(null);
+                  setContactFilter(null);
                   setDateFrom(null);
                   setDateTo(null);
                 }}
@@ -315,17 +340,13 @@ export default function Dashboard() {
       </ScrollView>
 
       <ClientPickerModal
-        visible={showClientPicker}
-        clients={clients}
-        selected={clientFilter}
+        visible={showContactPicker}
+        clients={contacts}
+        selected={contactFilter}
         onSelect={(id) => {
-          if (clientFilter === id) {
-            setClientFilter(null);
-          } else {
-            setClientFilter(id);
-          }
+          setContactFilter(contactFilter === id ? null : id);
         }}
-        onClose={() => setShowClientPicker(false)}
+        onClose={() => setShowContactPicker(false)}
       />
     </View>
   );

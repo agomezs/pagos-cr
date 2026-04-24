@@ -1,4 +1,4 @@
-import { getSummary, markPaid, unmarkPaid, createCharge, markOverdue } from '../db/charges';
+import { getSummary, createCharge, markOverdue } from '../db/charges';
 
 const mockRunSync = jest.fn();
 const mockGetAllSync = jest.fn();
@@ -58,55 +58,21 @@ describe('getSummary', () => {
   });
 });
 
-describe('markPaid', () => {
-  it('calls runSync with correct status and fields', () => {
-    markPaid('charge-1', 'sinpe', 'ref 12345', '2026-04-20');
-    expect(mockRunSync).toHaveBeenCalledTimes(1);
-    const [sql, method, note, paidAt] = mockRunSync.mock.calls[0];
-    expect(sql).toContain("status = 'paid'");
-    expect(method).toBe('sinpe');
-    expect(note).toBe('ref 12345');
-    expect(paidAt).toBe('2026-04-20');
-  });
-
-  it('passes null note through', () => {
-    markPaid('charge-1', 'cash', null, '2026-04-20');
-    const [, , note] = mockRunSync.mock.calls[0];
-    expect(note).toBeNull();
-  });
-});
-
-describe('unmarkPaid', () => {
-  it('calls runSync targeting the charge id', () => {
-    unmarkPaid('charge-42');
-    expect(mockRunSync).toHaveBeenCalledTimes(1);
-    const args = mockRunSync.mock.calls[0];
-    expect(args).toContain('charge-42');
-  });
-
-  it('sets payment fields to NULL in the query', () => {
-    unmarkPaid('charge-42');
-    const [sql] = mockRunSync.mock.calls[0];
-    expect(sql).toContain('payment_method = NULL');
-    expect(sql).toContain('paid_at = NULL');
-  });
-});
-
 describe('createCharge', () => {
   it('inserts with pending status', () => {
-    createCharge({ id: 'c-1', client_id: 'cl-1', concept: 'Mensualidad', amount: 120000, due_date: '2026-05-01' });
+    createCharge({ id: 'c-1', contact_id: 'co-1', due_date: '2026-05-01' });
     expect(mockRunSync).toHaveBeenCalledTimes(1);
     const [sql, ...args] = mockRunSync.mock.calls[0];
     expect(sql).toContain("'pending'");
     expect(args).toContain('c-1');
-    expect(args).toContain('cl-1');
-    expect(args).toContain(120000);
+    expect(args).toContain('co-1');
     expect(args).toContain('2026-05-01');
   });
 });
 
 describe('markOverdue', () => {
-  it('calls runSync with an UPDATE that targets pending charges past due', () => {
+  it('calls runSync with an UPDATE that targets pending recurring lines past due', () => {
+    mockGetAllSync.mockReturnValue([]);
     markOverdue();
     expect(mockRunSync).toHaveBeenCalledTimes(1);
     const [sql] = mockRunSync.mock.calls[0];

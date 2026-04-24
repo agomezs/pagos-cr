@@ -13,6 +13,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ScreenHeader from "../../components/ScreenHeader";
 import { createCharge } from "../../db/charges";
+import { createLine } from "../../db/chargeLines";
 import { listTemplates } from "../../db/chargeTemplates";
 import { formatDate } from "../../lib/format";
 import type { ChargeTemplate } from "../../lib/types";
@@ -20,14 +21,16 @@ import TemplatePickerModal from "../../components/TemplatePickerModal";
 import { LABELS } from "../../constants/labels";
 
 export default function NewChargeScreen() {
-  const { client_id, client_name } = useLocalSearchParams<{
-    client_id: string;
-    client_name: string;
+  const { contact_id, contact_name } = useLocalSearchParams<{
+    contact_id: string;
+    contact_name: string;
   }>();
   const router = useRouter();
 
   const [concept, setConcept] = useState("");
   const [amount, setAmount] = useState("");
+  const [lineType, setLineType] = useState<"recurring" | "extra">("recurring");
+  const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -42,6 +45,7 @@ export default function NewChargeScreen() {
   function applyTemplate(tpl: ChargeTemplate) {
     setConcept(tpl.concept);
     setAmount(String(tpl.amount));
+    setLineType(tpl.type);
     setError(null);
     setShowTemplates(false);
   }
@@ -63,17 +67,17 @@ export default function NewChargeScreen() {
 
   function handleSave() {
     const err = validate();
-    if (err) {
-      setError(err);
-      return;
-    }
+    if (err) { setError(err); return; }
     setError(null);
-    createCharge({
+    const chargeId = ExpoCrypto.randomUUID();
+    createCharge({ id: chargeId, contact_id, due_date: toISO(dueDate!) });
+    createLine({
       id: ExpoCrypto.randomUUID(),
-      client_id,
+      charge_id: chargeId,
       concept: concept.trim(),
       amount: parseInt(amount, 10),
-      due_date: toISO(dueDate!),
+      description: description.trim() || null,
+      type: lineType,
     });
     router.back();
   }
@@ -92,11 +96,11 @@ export default function NewChargeScreen() {
         {/* Header */}
         <ScreenHeader title={LABELS.charges.newTitle} onBack={() => router.back()} />
 
-        {/* Cliente (read-only) */}
+        {/* Contacto (read-only) */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">{LABELS.charges.fieldClient}</Text>
+          <Text className="text-sm font-semibold text-gray-700">{LABELS.charges.fieldContact}</Text>
           <View className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-3">
-            <Text className="text-base text-gray-600">{client_name ?? client_id}</Text>
+            <Text className="text-base text-gray-600">{contact_name ?? contact_id}</Text>
           </View>
         </View>
 
@@ -119,11 +123,23 @@ export default function NewChargeScreen() {
             placeholder={LABELS.charges.placeholderConcept}
             placeholderTextColor="#9ca3af"
             value={concept}
-            onChangeText={(t) => {
-              setConcept(t.slice(0, 200));
-              setError(null);
-            }}
+            onChangeText={(t) => { setConcept(t.slice(0, 200)); setError(null); }}
             autoFocus
+            returnKeyType="next"
+          />
+        </View>
+
+        {/* Descripción (opcional) */}
+        <View className="gap-1.5">
+          <Text className="text-sm font-semibold text-gray-700">
+            {LABELS.charges.fieldDescription} <Text className="text-gray-400 font-normal">{LABELS.common.optional}</Text>
+          </Text>
+          <TextInput
+            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            placeholder={LABELS.charges.placeholderDescription}
+            placeholderTextColor="#9ca3af"
+            value={description}
+            onChangeText={setDescription}
             returnKeyType="next"
           />
         </View>
@@ -138,13 +154,26 @@ export default function NewChargeScreen() {
             placeholder={LABELS.charges.placeholderAmount}
             placeholderTextColor="#9ca3af"
             value={amount}
-            onChangeText={(t) => {
-              setAmount(t.replace(/[^0-9]/g, ""));
-              setError(null);
-            }}
+            onChangeText={(t) => { setAmount(t.replace(/[^0-9]/g, "")); setError(null); }}
             keyboardType="number-pad"
             returnKeyType="done"
           />
+        </View>
+
+        {/* Tipo */}
+        <View className="gap-2">
+          <Text className="text-sm font-semibold text-gray-700">{LABELS.charges.fieldLineType}</Text>
+          <View className="flex-row gap-2">
+            {([["recurring", LABELS.charges.lineTypeRecurring], ["extra", LABELS.charges.lineTypeExtra]] as const).map(([val, label]) => (
+              <Pressable
+                key={val}
+                onPress={() => setLineType(val)}
+                className={`flex-1 py-3 rounded-xl items-center border ${lineType === val ? "bg-blue-600 border-blue-600" : "bg-white border-gray-200"} active:opacity-70`}
+              >
+                <Text className={`text-sm font-semibold ${lineType === val ? "text-white" : "text-gray-700"}`}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
 
         {/* Fecha de vencimiento */}
@@ -168,21 +197,14 @@ export default function NewChargeScreen() {
               value={dueDate ?? new Date()}
               onChange={(_, selected) => {
                 if (Platform.OS === "android") setShowPicker(false);
-                if (selected) {
-                  setDueDate(selected);
-                  setError(null);
-                }
+                if (selected) { setDueDate(selected); setError(null); }
               }}
               locale="es-CR"
             />
           )}
 
-          {/* iOS: confirm button to dismiss spinner */}
           {showPicker && Platform.OS === "ios" && (
-            <Pressable
-              onPress={() => setShowPicker(false)}
-              className="items-end"
-            >
+            <Pressable onPress={() => setShowPicker(false)} className="items-end">
               <Text className="text-blue-600 text-sm font-semibold py-1">{LABELS.common.done}</Text>
             </Pressable>
           )}

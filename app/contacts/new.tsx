@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import * as ExpoCrypto from "expo-crypto";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,38 +10,27 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import ScreenHeader from "../../../components/ScreenHeader";
-import { getClient, updateClient } from "../../../db/clients";
-import { LABELS } from "../../../constants/labels";
+import { useRouter } from "expo-router";
+import ScreenHeader from "../../components/ScreenHeader";
+import { createContact } from "../../db/contacts";
+import { LABELS } from "../../constants/labels";
 
-export default function EditClientScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+export default function NewContactScreen() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const client = getClient(id);
-    if (!client) {
-      router.back();
-      return;
-    }
-    setName(client.name);
-    setPhone(client.phone ?? "");
-    setNotes(client.notes ?? "");
-  }, [id, router]);
-
   function handleSave() {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setError(LABELS.clients.errorNameRequired);
+      setError(LABELS.contacts.errorNameRequired);
       return;
     }
     setError(null);
-    updateClient(id, {
+    createContact({
+      id: ExpoCrypto.randomUUID(),
       name: trimmedName,
       phone: phone.trim() || null,
       notes: notes.trim() || null,
@@ -60,16 +50,16 @@ export default function EditClientScreen() {
         contentContainerClassName="p-4 gap-6"
       >
         {/* Header */}
-        <ScreenHeader title={LABELS.clients.editTitle} onBack={() => router.back()} />
+        <ScreenHeader title={LABELS.contacts.newTitle} onBack={() => router.back()} />
 
-        {/* Name */}
+        {/* Nombre */}
         <View className="gap-1.5">
           <Text className="text-sm font-semibold text-gray-700">
-            {LABELS.clients.fieldName} <Text className="text-red-500">*</Text>
+            {LABELS.contacts.fieldName} <Text className="text-red-500">*</Text>
           </Text>
           <TextInput
             className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
-            placeholder={LABELS.clients.placeholderName}
+            placeholder={LABELS.contacts.placeholderName}
             placeholderTextColor="#9ca3af"
             value={name}
             onChangeText={(t) => {
@@ -82,12 +72,12 @@ export default function EditClientScreen() {
           {error && <Text className="text-red-500 text-sm">{error}</Text>}
         </View>
 
-        {/* Phone */}
+        {/* Teléfono */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">{LABELS.clients.fieldPhone}</Text>
+          <Text className="text-sm font-semibold text-gray-700">{LABELS.contacts.fieldPhone}</Text>
           <TextInput
             className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
-            placeholder={LABELS.clients.placeholderPhone}
+            placeholder={LABELS.contacts.placeholderPhone}
             placeholderTextColor="#9ca3af"
             value={phone}
             onChangeText={setPhone}
@@ -96,12 +86,12 @@ export default function EditClientScreen() {
           />
         </View>
 
-        {/* Notes */}
+        {/* Notas */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">{LABELS.clients.fieldNotes}</Text>
+          <Text className="text-sm font-semibold text-gray-700">{LABELS.contacts.fieldNotes}</Text>
           <TextInput
             className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
-            placeholder={LABELS.clients.placeholderNotes}
+            placeholder={LABELS.contacts.placeholderNotes}
             placeholderTextColor="#9ca3af"
             value={notes}
             onChangeText={(t) => setNotes(t.slice(0, 500))}
@@ -112,14 +102,14 @@ export default function EditClientScreen() {
           />
         </View>
 
-        {/* Save button */}
+        {/* Guardar */}
         <Pressable
           onPress={handleSave}
           disabled={!canSave}
           className={`rounded-xl py-4 items-center ${canSave ? "bg-blue-600" : "bg-gray-200"}`}
         >
           <Text className={`text-base font-semibold ${canSave ? "text-white" : "text-gray-400"}`}>
-            {LABELS.common.saveChanges}
+            {LABELS.common.save}
           </Text>
         </Pressable>
       </ScrollView>
