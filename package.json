@@ -7,7 +7,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@gluestack-ui/button": "^1.0.14",
@@ -46,7 +48,13 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/react": "~19.2.10",
-    "typescript": "~5.9.2"
+    "@typescript-eslint/eslint-plugin": "^8.59.0",
+    "@typescript-eslint/parser": "^8.59.0",
+    "eslint": "^9.39.4",
+    "eslint-config-expo": "^55.0.0",
+    "eslint-plugin-react-native": "^5.0.0",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.59.0"
   },
   "private": true,
   "jest": {
