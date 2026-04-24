@@ -1,6 +1,5 @@
 import { getDb } from './database';
 import type { ChargeLine, LineType, PaymentMethod } from '../lib/types';
-import { LINE_TYPE } from '../constants/enums';
 
 export function listLinesByCharge(charge_id: string): ChargeLine[] {
   const db = getDb();

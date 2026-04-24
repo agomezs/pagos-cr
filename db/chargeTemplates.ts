@@ -1,6 +1,5 @@
 import { getDb } from './database';
 import type { ChargeTemplate, LineType } from '../lib/types';
-import { LINE_TYPE } from '../constants/enums';
 
 export function listTemplates(): ChargeTemplate[] {
   const db = getDb();

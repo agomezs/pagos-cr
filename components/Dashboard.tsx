@@ -8,9 +8,8 @@ import {
   Text,
   View,
 } from "react-native";
-import { markOverdue, getSummary, listCharges } from "../db/charges";
+import { markOverdue, getSummary, listCharges , createCharge } from "../db/charges";
 import { listContacts, createContact } from "../db/contacts";
-import { createCharge } from "../db/charges";
 import { createLine } from "../db/chargeLines";
 import { createTemplate } from "../db/chargeTemplates";
 import { getDb } from "../db/database";
