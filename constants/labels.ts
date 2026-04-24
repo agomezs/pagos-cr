@@ -115,6 +115,7 @@ export const LABELS = {
   },
 
   dashboard: {
+    tab: 'Tablero',
     summaryTitle: 'Resumen',
     filterAll: 'Todos',
     filterContact: 'Contacto',
