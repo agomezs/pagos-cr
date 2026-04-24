@@ -1,3 +1,5 @@
+import { listTemplates, createTemplate, updateTemplate, deleteTemplate } from '../db/chargeTemplates';
+
 const mockRunSync = jest.fn();
 const mockGetAllSync = jest.fn();
 
@@ -8,8 +10,6 @@ jest.mock('expo-sqlite', () => ({
     getAllSync: mockGetAllSync,
   })),
 }));
-
-import { listTemplates, createTemplate, updateTemplate, deleteTemplate } from '../db/chargeTemplates';
 
 beforeEach(() => jest.clearAllMocks());
 

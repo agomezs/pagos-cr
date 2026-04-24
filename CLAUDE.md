@@ -10,7 +10,7 @@ npm run ios                      # run on iOS simulator
 npm run android                  # run on Android emulator
 ```
 
-No test runner or linter is configured yet.
+ESLint is configured (`eslint.config.js`). Run with `npm run lint` or `npm run lint:fix`.
 
 ## Architecture
 
@@ -41,6 +41,8 @@ NativeWind v4 (Tailwind v3 — **do not upgrade to Tailwind v4**). Global styles
 ## React Conventions
 
 Extract a component when it genuinely simplifies the code — e.g. the logic is reused in multiple places, or the JSX block is large enough that inlining it obscures the parent's intent. Don't extract for its own sake: a small, one-off piece of JSX belongs inline.
+
+JSX section label comments (`{/* Header */}`, `{/* Save button */}`, etc.) are encouraged in screens and large components — they orient the reader without explaining logic.
 
 ## Navigation / UX Conventions
 

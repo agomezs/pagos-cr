@@ -1,4 +1,5 @@
-// Mock expo-sqlite before any db imports
+import { getSummary, markPaid, unmarkPaid, createCharge, markOverdue } from '../db/charges';
+
 const mockRunSync = jest.fn();
 const mockGetAllSync = jest.fn();
 
@@ -9,9 +10,6 @@ jest.mock('expo-sqlite', () => ({
     getAllSync: mockGetAllSync,
   })),
 }));
-
-// Import after mock is in place
-import { getSummary, markPaid, unmarkPaid, createCharge, markOverdue } from '../db/charges';
 
 beforeEach(() => {
   jest.clearAllMocks();

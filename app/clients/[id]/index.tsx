@@ -97,7 +97,7 @@ export default function ClientDetailScreen() {
     }
     setClient(c);
     setCharges(listChargesByClient(id));
-  }, [id]);
+  }, [id, router]);
 
   useFocusEffect(load);
 

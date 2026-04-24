@@ -4,6 +4,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   View,
@@ -30,7 +31,7 @@ export default function EditClientScreen() {
     setName(client.name);
     setPhone(client.phone ?? "");
     setNotes(client.notes ?? "");
-  }, [id]);
+  }, [id, router]);
 
   function handleSave() {
     const trimmedName = name.trim();
@@ -107,7 +108,7 @@ export default function EditClientScreen() {
             multiline
             numberOfLines={3}
             textAlignVertical="top"
-            style={{ minHeight: 80 }}
+            style={styles.notesInput}
           />
         </View>
 
@@ -125,3 +126,7 @@ export default function EditClientScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  notesInput: { minHeight: 80 },
+});

@@ -5,6 +5,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   View,
@@ -97,7 +98,7 @@ export default function NewClientScreen() {
             multiline
             numberOfLines={3}
             textAlignVertical="top"
-            style={{ minHeight: 80 }}
+            style={styles.notesInput}
           />
         </View>
 
@@ -115,3 +116,7 @@ export default function NewClientScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  notesInput: { minHeight: 80 },
+});

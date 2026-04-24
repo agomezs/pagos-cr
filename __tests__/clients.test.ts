@@ -1,3 +1,5 @@
+import { listClients, getClient, createClient, updateClient, deactivateClient } from '../db/clients';
+
 const mockRunSync = jest.fn();
 const mockGetAllSync = jest.fn();
 const mockGetFirstSync = jest.fn();
@@ -10,8 +12,6 @@ jest.mock('expo-sqlite', () => ({
     getFirstSync: mockGetFirstSync,
   })),
 }));
-
-import { listClients, getClient, createClient, updateClient, deactivateClient } from '../db/clients';
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -60,7 +60,7 @@ describe('createClient', () => {
 
   it('passes null for missing phone', () => {
     createClient({ id: 'uuid-2', name: 'María', phone: null, notes: null });
-    const [_sql, _id, _name, phone] = mockRunSync.mock.calls[0];
+    const [, , , phone] = mockRunSync.mock.calls[0];
     expect(phone).toBeNull();
   });
 });

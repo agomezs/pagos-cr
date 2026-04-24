@@ -4,6 +4,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -55,7 +56,7 @@ function StatCard({ label, count, amount, bg, active, onPress }: StatCardProps) 
   return (
     <Pressable
       onPress={onPress}
-      style={{ flex: 1, borderRadius: 16, padding: 16, gap: 4, backgroundColor: bg, borderWidth: active ? 2 : 0, borderColor: "rgba(255,255,255,0.6)" }}
+      style={[styles.statCard, { backgroundColor: bg }, active ? styles.statCardActive : null]}
     >
       <Text className="text-xs font-semibold text-white/80 uppercase tracking-wide">{label}</Text>
       <Text className="text-2xl font-bold text-white">{formatColones(amount)}</Text>
@@ -329,3 +330,10 @@ export default function Dashboard() {
     </View>
   );
 }
+
+const STAT_CARD_BORDER_COLOR = "rgba(255,255,255,0.6)";
+
+const styles = StyleSheet.create({
+  statCard: { flex: 1, borderRadius: 16, padding: 16, gap: 4, borderColor: STAT_CARD_BORDER_COLOR },
+  statCardActive: { borderWidth: 2 },
+});
