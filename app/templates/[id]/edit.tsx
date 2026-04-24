@@ -1,0 +1,104 @@
+import { useEffect, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import ScreenHeader from "../../../components/ScreenHeader";
+import { listTemplates, updateTemplate } from "../../../db/chargeTemplates";
+import { LABELS } from "../../../constants/labels";
+
+export default function EditTemplateScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const [concept, setConcept] = useState("");
+  const [amount, setAmount] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const tpl = listTemplates().find((t) => t.id === id);
+    if (tpl) {
+      setConcept(tpl.concept);
+      setAmount(String(tpl.amount));
+    }
+  }, [id]);
+
+  function validate(): string | null {
+    if (!concept.trim()) return LABELS.templates.errorConceptRequired;
+    const amt = parseInt(amount, 10);
+    if (!amount || isNaN(amt) || amt <= 0) return LABELS.templates.errorAmountInvalid;
+    return null;
+  }
+
+  function handleSave() {
+    const err = validate();
+    if (err) { setError(err); return; }
+    setError(null);
+    updateTemplate(id, { concept: concept.trim(), amount: parseInt(amount, 10) });
+    router.back();
+  }
+
+  const canSave = concept.trim().length > 0 && amount.length > 0;
+
+  return (
+    <KeyboardAvoidingView
+      className="flex-1 bg-gray-50"
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="p-4 gap-6">
+        <ScreenHeader title={LABELS.templates.editTitle} onBack={() => router.back()} />
+
+        <View className="gap-1.5">
+          <Text className="text-sm font-semibold text-gray-700">
+            {LABELS.templates.fieldConcept} <Text className="text-red-500">*</Text>
+          </Text>
+          <TextInput
+            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            placeholder={LABELS.templates.placeholderConcept}
+            placeholderTextColor="#9ca3af"
+            value={concept}
+            onChangeText={(t) => { setConcept(t.slice(0, 200)); setError(null); }}
+            autoFocus
+            returnKeyType="next"
+          />
+        </View>
+
+        <View className="gap-1.5">
+          <Text className="text-sm font-semibold text-gray-700">
+            {LABELS.templates.fieldAmount} <Text className="text-red-500">*</Text>
+          </Text>
+          <TextInput
+            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            placeholder={LABELS.templates.placeholderAmount}
+            placeholderTextColor="#9ca3af"
+            value={amount}
+            onChangeText={(t) => { setAmount(t.replace(/[^0-9]/g, "")); setError(null); }}
+            keyboardType="number-pad"
+            returnKeyType="done"
+          />
+        </View>
+
+        {error && (
+          <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <Text className="text-red-600 text-sm">{error}</Text>
+          </View>
+        )}
+
+        <Pressable
+          onPress={handleSave}
+          disabled={!canSave}
+          className={`rounded-xl py-4 items-center ${canSave ? "bg-blue-600" : "bg-gray-200"}`}
+        >
+          <Text className={`text-base font-semibold ${canSave ? "text-white" : "text-gray-400"}`}>
+            {LABELS.common.saveChanges}
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
