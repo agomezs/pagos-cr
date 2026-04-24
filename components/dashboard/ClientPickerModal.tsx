@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import type { Client } from "../../lib/types";
+import type { Contact } from "../../lib/types";
 import { LABELS } from "../../constants/labels";
 
 export function ClientPickerModal({
@@ -11,7 +11,7 @@ export function ClientPickerModal({
   onClose,
 }: {
   visible: boolean;
-  clients: Client[];
+  clients: Contact[];
   selected: string | null;
   onSelect: (id: string | null) => void;
   onClose: () => void;
@@ -33,7 +33,7 @@ export function ClientPickerModal({
         <View className="px-4 py-3 bg-white border-b border-gray-100">
           <TextInput
             className="bg-gray-100 rounded-xl px-4 py-2.5 text-base text-gray-900"
-            placeholder={LABELS.dashboard.searchClient}
+            placeholder={LABELS.dashboard.searchContact}
             placeholderTextColor="#9ca3af"
             value={search}
             onChangeText={setSearch}
@@ -46,7 +46,7 @@ export function ClientPickerModal({
             className="px-4 py-4 bg-white border-b border-gray-100 active:opacity-70"
           >
             <Text className={`text-base ${selected === null ? "text-blue-600 font-semibold" : "text-gray-800"}`}>
-              {LABELS.dashboard.allClients}
+              {LABELS.dashboard.allContacts}
             </Text>
           </Pressable>
           {filtered.map((c) => (

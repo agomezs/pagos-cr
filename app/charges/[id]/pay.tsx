@@ -11,7 +11,8 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ScreenHeader from "../../../components/ScreenHeader";
-import { markPaid } from "../../../db/charges";
+import { markLinePaid } from "../../../db/chargeLines";
+import { refreshChargeStatus } from "../../../db/charges";
 import { formatColones, formatDate } from "../../../lib/format";
 import type { PaymentMethod } from "../../../lib/types";
 import { LABELS } from "../../../constants/labels";
@@ -29,12 +30,13 @@ function toISO(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-export default function PayChargeScreen() {
-  const { id, concept, amount, client_name } = useLocalSearchParams<{
+export default function PayLineScreen() {
+  const { id, concept, amount, contact_name, charge_id } = useLocalSearchParams<{
     id: string;
     concept: string;
     amount: string;
-    client_name: string;
+    contact_name: string;
+    charge_id: string;
   }>();
   const router = useRouter();
 
@@ -50,7 +52,8 @@ export default function PayChargeScreen() {
       return;
     }
     setError(null);
-    markPaid(id, method, note.trim() || null, toISO(paidAt));
+    markLinePaid(id, method, toISO(paidAt));
+    refreshChargeStatus(charge_id);
     router.back();
   }
 
@@ -74,8 +77,8 @@ export default function PayChargeScreen() {
             {LABELS.pay.chargeHeader}
           </Text>
           <Text className="text-base font-semibold text-gray-900">{concept}</Text>
-          {client_name ? (
-            <Text className="text-sm text-gray-500">{client_name}</Text>
+          {contact_name ? (
+            <Text className="text-sm text-gray-500">{contact_name}</Text>
           ) : null}
           <Text className="text-lg font-bold text-gray-800 mt-1">
             {formatColones(parseInt(amount ?? "0", 10))}
@@ -93,21 +96,12 @@ export default function PayChargeScreen() {
               return (
                 <Pressable
                   key={value}
-                  onPress={() => {
-                    setMethod(value);
-                    setError(null);
-                  }}
+                  onPress={() => { setMethod(value); setError(null); }}
                   className={`flex-1 py-3 rounded-xl items-center border ${
-                    selected
-                      ? "bg-blue-600 border-blue-600"
-                      : "bg-white border-gray-200"
+                    selected ? "bg-blue-600 border-blue-600" : "bg-white border-gray-200"
                   } active:opacity-70`}
                 >
-                  <Text
-                    className={`text-sm font-semibold ${
-                      selected ? "text-white" : "text-gray-700"
-                    }`}
-                  >
+                  <Text className={`text-sm font-semibold ${selected ? "text-white" : "text-gray-700"}`}>
                     {label}
                   </Text>
                 </Pressable>
@@ -174,15 +168,9 @@ export default function PayChargeScreen() {
         <Pressable
           onPress={handleConfirm}
           disabled={!canConfirm}
-          className={`rounded-xl py-4 items-center ${
-            canConfirm ? "bg-green-600" : "bg-gray-200"
-          } active:opacity-70`}
+          className={`rounded-xl py-4 items-center ${canConfirm ? "bg-green-600" : "bg-gray-200"} active:opacity-70`}
         >
-          <Text
-            className={`text-base font-semibold ${
-              canConfirm ? "text-white" : "text-gray-400"
-            }`}
-          >
+          <Text className={`text-base font-semibold ${canConfirm ? "text-white" : "text-gray-400"}`}>
             {LABELS.pay.confirmButton}
           </Text>
         </Pressable>
