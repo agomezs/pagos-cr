@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  lint:
+  ci:
     runs-on: pagos-cr-runners
     steps:
       - uses: actions/checkout@v4
@@ -17,25 +17,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-
-  type-check:
-    runs-on: pagos-cr-runners
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
       - run: npx tsc --noEmit
-
-  test:
-    runs-on: pagos-cr-runners
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
       - run: npm test -- --ci --watchAll=false
