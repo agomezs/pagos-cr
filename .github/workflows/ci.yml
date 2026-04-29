@@ -2,27 +2,20 @@ name: CI
 
 on:
   push:
-    branches: [main, feature/**]
+    branches: [main, "feature/**"]
   pull_request:
     branches: [main]
 
 jobs:
-  lint-and-test:
-    runs-on: ubuntu-latest
-
+  ci:
+    runs-on: pagos-cr-runners
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Test
-        run: npm test -- --ci --watchAll=false
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm test -- --ci --watchAll=false

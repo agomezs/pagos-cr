@@ -98,7 +98,7 @@ const Button = React.forwardRef<
   ) => {
     return (
       <ButtonBase
-        ref={ref}
+        ref={ref as any}
         disabled={isDisabled}
         className={buttonStyle({ action, variant, size, isDisabled, class: className })}
         context={{ action, variant, size, isDisabled }}
@@ -119,7 +119,7 @@ const ButtonText = React.forwardRef<
   const { size: ctxSize } = useStyleContext(SCOPE);
   return (
     <ButtonBase.Text
-      ref={ref}
+      ref={ref as any}
       className={buttonTextStyle({ size: size ?? ctxSize, class: className })}
       {...props}
     />
