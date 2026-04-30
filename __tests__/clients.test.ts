@@ -50,7 +50,7 @@ describe('getContact', () => {
 
 describe('createContact', () => {
   it('calls runSync with correct fields', () => {
-    createContact({ id: 'uuid-1', name: 'Luis', phone: null, notes: 'VIP' });
+    createContact({ id: 'uuid-1', name: 'Luis', phone: null, email: null, notes: 'VIP', monthly_amount: null });
     expect(mockRunSync).toHaveBeenCalledTimes(1);
     const args = mockRunSync.mock.calls[0];
     expect(args).toContain('uuid-1');
@@ -59,7 +59,7 @@ describe('createContact', () => {
   });
 
   it('passes null for missing phone', () => {
-    createContact({ id: 'uuid-2', name: 'María', phone: null, notes: null });
+    createContact({ id: 'uuid-2', name: 'María', phone: null, email: null, notes: null, monthly_amount: null });
     const [, , , phone] = mockRunSync.mock.calls[0];
     expect(phone).toBeNull();
   });
@@ -67,7 +67,7 @@ describe('createContact', () => {
 
 describe('updateContact', () => {
   it('calls runSync with updated fields and id', () => {
-    updateContact('uuid-1', { name: 'Luis Updated', phone: '+506 7777-0000', notes: null });
+    updateContact('uuid-1', { name: 'Luis Updated', phone: '+506 7777-0000', email: null, notes: null, monthly_amount: null });
     expect(mockRunSync).toHaveBeenCalledTimes(1);
     const args = mockRunSync.mock.calls[0];
     expect(args).toContain('uuid-1');

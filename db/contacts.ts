@@ -5,7 +5,9 @@ type RawContact = {
   id: string;
   name: string;
   phone: string | null;
+  email: string | null;
   notes: string | null;
+  monthly_amount: number | null;
   active: number;
   created_at: string;
   updated_at: string;
@@ -27,29 +29,33 @@ export function getContact(id: string): Contact | null {
   return row ? toContact(row) : null;
 }
 
-export function createContact(contact: { id: string; name: string; phone: string | null; notes: string | null }): void {
+export function createContact(contact: { id: string; name: string; phone: string | null; email: string | null; notes: string | null; monthly_amount: number | null }): void {
   const db = getDb();
   const now = new Date().toISOString();
   db.runSync(
-    `INSERT INTO contacts (id, name, phone, notes, active, created_at, updated_at)
-     VALUES (?, ?, ?, ?, 1, ?, ?)`,
+    `INSERT INTO contacts (id, name, phone, email, notes, monthly_amount, active, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
     contact.id,
     contact.name,
     contact.phone ?? null,
+    contact.email ?? null,
     contact.notes ?? null,
+    contact.monthly_amount ?? null,
     now,
     now,
   );
 }
 
-export function updateContact(id: string, fields: { name: string; phone: string | null; notes: string | null }): void {
+export function updateContact(id: string, fields: { name: string; phone: string | null; email: string | null; notes: string | null; monthly_amount: number | null }): void {
   const db = getDb();
   const now = new Date().toISOString();
   db.runSync(
-    `UPDATE contacts SET name = ?, phone = ?, notes = ?, updated_at = ? WHERE id = ?`,
+    `UPDATE contacts SET name = ?, phone = ?, email = ?, notes = ?, monthly_amount = ?, updated_at = ? WHERE id = ?`,
     fields.name,
     fields.phone ?? null,
+    fields.email ?? null,
     fields.notes ?? null,
+    fields.monthly_amount ?? null,
     now,
     id,
   );

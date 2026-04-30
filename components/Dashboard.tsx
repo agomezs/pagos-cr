@@ -26,9 +26,9 @@ function seedIfEmpty() {
   const contacts = listContacts();
   if (contacts.length > 0) return;
 
-  const c1 = { id: "c1", name: "Ana Rodríguez", phone: "88001234", notes: null };
-  const c2 = { id: "c2", name: "Luis Pérez", phone: "88005678", notes: null };
-  const c3 = { id: "c3", name: "María Castro", phone: null, notes: null };
+  const c1 = { id: "c1", name: "Ana Rodríguez", phone: "88001234", email: null, notes: "Lucas + Clarita", monthly_amount: 380000 };
+  const c2 = { id: "c2", name: "Luis Pérez", phone: "88005678", email: null, notes: null, monthly_amount: 210000 };
+  const c3 = { id: "c3", name: "María Castro", phone: null, email: null, notes: null, monthly_amount: 210000 };
   createContact(c1);
   createContact(c2);
   createContact(c3);

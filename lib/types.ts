@@ -2,7 +2,9 @@ export type Contact = {
   id: string;
   name: string;
   phone: string | null;
+  email: string | null;
   notes: string | null;
+  monthly_amount: number | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -43,6 +45,7 @@ export type ChargeTemplate = {
   concept: string;
   amount: number;
   type: LineType;
+  personal: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -51,12 +54,16 @@ export type ContactTemplate = {
   id: string;
   contact_id: string;
   template_id: string;
+  amount: number | null;
+  description: string | null;
   active: boolean;
   created_at: string;
-  // joined
+  updated_at: string;
+  // joined from charge_templates
   concept?: string;
-  amount?: number;
+  template_amount?: number;
   type?: LineType;
+  personal?: boolean;
 };
 
 export type Summary = {

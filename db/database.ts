@@ -16,20 +16,23 @@ function runMigrations(db: SQLite.SQLiteDatabase): void {
     PRAGMA foreign_keys = ON;
 
     CREATE TABLE IF NOT EXISTS contacts (
-      id          TEXT PRIMARY KEY,
-      name        TEXT NOT NULL,
-      phone       TEXT,
-      notes       TEXT,
-      active      INTEGER NOT NULL DEFAULT 1,
-      created_at  TEXT NOT NULL,
-      updated_at  TEXT NOT NULL
+      id             TEXT PRIMARY KEY,
+      name           TEXT NOT NULL,
+      phone          TEXT,
+      email          TEXT,
+      notes          TEXT,
+      monthly_amount INTEGER,
+      active         INTEGER NOT NULL DEFAULT 1,
+      created_at     TEXT NOT NULL,
+      updated_at     TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS charge_templates (
       id          TEXT PRIMARY KEY,
       concept     TEXT NOT NULL,
-      amount      INTEGER NOT NULL,
+      amount      INTEGER NOT NULL DEFAULT 0,
       type        TEXT NOT NULL DEFAULT 'recurring',
+      personal    INTEGER NOT NULL DEFAULT 0,
       created_at  TEXT NOT NULL,
       updated_at  TEXT NOT NULL
     );
@@ -38,8 +41,11 @@ function runMigrations(db: SQLite.SQLiteDatabase): void {
       id          TEXT PRIMARY KEY,
       contact_id  TEXT NOT NULL REFERENCES contacts(id),
       template_id TEXT NOT NULL REFERENCES charge_templates(id),
+      amount      INTEGER,
+      description TEXT,
       active      INTEGER NOT NULL DEFAULT 1,
-      created_at  TEXT NOT NULL
+      created_at  TEXT NOT NULL,
+      updated_at  TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS charges (
