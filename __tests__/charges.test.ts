@@ -1,4 +1,4 @@
-import { getSummary, createCharge, markOverdue } from '../db/charges';
+import { getSummary, createCharge, markOverdue, listChargesByContact } from '../db/charges';
 
 const mockRunSync = jest.fn();
 const mockGetAllSync = jest.fn();
@@ -67,6 +67,35 @@ describe('createCharge', () => {
     expect(args).toContain('c-1');
     expect(args).toContain('co-1');
     expect(args).toContain('2026-05-01');
+  });
+});
+
+describe('listChargesByContact', () => {
+  it('returns charges with their lines for a given contact', () => {
+    const charge = { id: 'ch-1', contact_id: 'co-1', contact_name: 'Ana', due_date: '2026-05-01', status: 'pending', created_at: '', updated_at: '' };
+    const line = { id: 'l-1', charge_id: 'ch-1', concept: 'Mensualidad', amount: 35000, type: 'recurring', status: 'pending', description: null, payment_method: null, paid_at: null, created_at: '', updated_at: '' };
+    mockGetAllSync
+      .mockReturnValueOnce([charge])  // charges query
+      .mockReturnValueOnce([line]);   // lines query for ch-1
+    const result = listChargesByContact('co-1');
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('ch-1');
+    const lines = result[0].lines ?? [];
+    expect(lines).toHaveLength(1);
+    expect(lines[0].concept).toBe('Mensualidad');
+  });
+
+  it('returns empty array when contact has no charges', () => {
+    mockGetAllSync.mockReturnValueOnce([]);
+    expect(listChargesByContact('co-999')).toEqual([]);
+  });
+
+  it('queries by contact_id', () => {
+    mockGetAllSync.mockReturnValueOnce([]);
+    listChargesByContact('co-1');
+    const [sql, contactId] = mockGetAllSync.mock.calls[0];
+    expect(sql).toContain('contact_id = ?');
+    expect(contactId).toBe('co-1');
   });
 });
 

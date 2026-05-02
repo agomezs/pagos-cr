@@ -19,6 +19,8 @@ export default function EditContactScreen() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [monthlyAmount, setMonthlyAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +29,8 @@ export default function EditContactScreen() {
     if (!contact) { router.back(); return; }
     setName(contact.name);
     setPhone(contact.phone ?? "");
+    setEmail(contact.email ?? "");
+    setMonthlyAmount(contact.monthly_amount != null ? String(contact.monthly_amount) : "");
     setNotes(contact.notes ?? "");
   }, [id, router]);
 
@@ -37,10 +41,13 @@ export default function EditContactScreen() {
       return;
     }
     setError(null);
+    const amt = parseInt(monthlyAmount, 10);
     updateContact(id, {
       name: trimmedName,
       phone: phone.trim() || null,
+      email: email.trim() || null,
       notes: notes.trim() || null,
+      monthly_amount: monthlyAmount && !isNaN(amt) && amt > 0 ? amt : null,
     });
     router.back();
   }
@@ -89,6 +96,35 @@ export default function EditContactScreen() {
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
+            returnKeyType="next"
+          />
+        </View>
+
+        {/* Email */}
+        <View className="gap-1.5">
+          <Text className="text-sm font-semibold text-gray-700">{LABELS.contacts.fieldEmail}</Text>
+          <TextInput
+            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            placeholder={LABELS.contacts.placeholderEmail}
+            placeholderTextColor="#9ca3af"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            returnKeyType="next"
+          />
+        </View>
+
+        {/* Mensualidad */}
+        <View className="gap-1.5">
+          <Text className="text-sm font-semibold text-gray-700">{LABELS.contacts.fieldMonthlyAmount}</Text>
+          <TextInput
+            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            placeholder={LABELS.contacts.placeholderMonthlyAmount}
+            placeholderTextColor="#9ca3af"
+            value={monthlyAmount}
+            onChangeText={(t) => setMonthlyAmount(t.replace(/[^0-9]/g, ""))}
+            keyboardType="number-pad"
             returnKeyType="next"
           />
         </View>

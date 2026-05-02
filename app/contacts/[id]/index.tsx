@@ -199,9 +199,17 @@ export default function ContactDetailScreen() {
 
       {/* Charges section */}
       <View className="gap-3">
-        <Text className="text-base font-semibold text-gray-700">
-          {LABELS.charges.sectionTitle} {charges.length > 0 ? `(${charges.length})` : ""}
-        </Text>
+        <View className="flex-row items-center justify-between">
+          <Text className="text-base font-semibold text-gray-700">
+            {LABELS.charges.sectionTitle} {charges.length > 0 ? `(${charges.length})` : ""}
+          </Text>
+          <Pressable
+            onPress={() => router.push({ pathname: "/charges/new", params: { contact_id: id, contact_name: contact.name } })}
+            className="bg-blue-600 rounded-xl px-3 py-1.5 active:opacity-70"
+          >
+            <Text className="text-white text-sm font-semibold">{LABELS.charges.newButton}</Text>
+          </Pressable>
+        </View>
 
         {charges.length === 0 ? (
           <View className="bg-white rounded-2xl px-4 py-8 border border-gray-100 items-center gap-2">
