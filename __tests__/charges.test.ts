@@ -1,14 +1,28 @@
-import { getSummary, createCharge, markOverdue, listChargesByContact } from '../db/charges';
+import {
+  getSummary,
+  createCharge,
+  markOverdue,
+  listChargesByContact,
+  listChargesForPeriod,
+  listChargesByContactInPeriod,
+  generateChargesForPeriod,
+} from '../db/charges';
 
 const mockRunSync = jest.fn();
 const mockGetAllSync = jest.fn();
+const mockWithTransactionSync = jest.fn((fn: () => void) => fn());
 
 jest.mock('expo-sqlite', () => ({
   openDatabaseSync: jest.fn(() => ({
     execSync: jest.fn(),
     runSync: mockRunSync,
     getAllSync: mockGetAllSync,
+    withTransactionSync: mockWithTransactionSync,
   })),
+}));
+
+jest.mock('expo-crypto', () => ({
+  randomUUID: jest.fn(() => 'test-uuid'),
 }));
 
 beforeEach(() => {
@@ -59,20 +73,21 @@ describe('getSummary', () => {
 });
 
 describe('createCharge', () => {
-  it('inserts with pending status', () => {
-    createCharge({ id: 'c-1', contact_id: 'co-1', due_date: '2026-05-01' });
+  it('inserts with period and pending status', () => {
+    createCharge({ id: 'c-1', contact_id: 'co-1', period: '2026-05', due_date: '2026-05-01' });
     expect(mockRunSync).toHaveBeenCalledTimes(1);
     const [sql, ...args] = mockRunSync.mock.calls[0];
     expect(sql).toContain("'pending'");
     expect(args).toContain('c-1');
     expect(args).toContain('co-1');
+    expect(args).toContain('2026-05');
     expect(args).toContain('2026-05-01');
   });
 });
 
 describe('listChargesByContact', () => {
   it('returns charges with their lines for a given contact', () => {
-    const charge = { id: 'ch-1', contact_id: 'co-1', contact_name: 'Ana', due_date: '2026-05-01', status: 'pending', created_at: '', updated_at: '' };
+    const charge = { id: 'ch-1', contact_id: 'co-1', contact_name: 'Ana', period: '2026-05', due_date: '2026-05-01', status: 'pending', created_at: '', updated_at: '' };
     const line = { id: 'l-1', charge_id: 'ch-1', concept: 'Mensualidad', amount: 35000, type: 'recurring', status: 'pending', description: null, payment_method: null, paid_at: null, created_at: '', updated_at: '' };
     mockGetAllSync
       .mockReturnValueOnce([charge])  // charges query
@@ -99,6 +114,44 @@ describe('listChargesByContact', () => {
   });
 });
 
+describe('listChargesForPeriod', () => {
+  it('passes period twice to the query (current period + unpaid past periods)', () => {
+    mockGetAllSync.mockReturnValue([]);
+    listChargesForPeriod('2026-05');
+    const [sql, p1, p2] = mockGetAllSync.mock.calls[0];
+    expect(sql).toContain('period = ?');
+    expect(sql).toContain('period < ?');
+    expect(p1).toBe('2026-05');
+    expect(p2).toBe('2026-05');
+  });
+
+  it('returns charges with their lines', () => {
+    const charge = { id: 'ch-1', contact_id: 'co-1', contact_name: 'Ana', period: '2026-05', due_date: '2026-05-01', status: 'pending', created_at: '', updated_at: '' };
+    const line = { id: 'l-1', charge_id: 'ch-1', concept: 'Mensualidad', amount: 35000, type: 'recurring', status: 'pending', description: null, payment_method: null, paid_at: null, created_at: '', updated_at: '' };
+    mockGetAllSync
+      .mockReturnValueOnce([charge])
+      .mockReturnValueOnce([line]);
+    const result = listChargesForPeriod('2026-05');
+    expect(result).toHaveLength(1);
+    expect(result[0].period).toBe('2026-05');
+    expect(result[0].lines).toHaveLength(1);
+  });
+});
+
+describe('listChargesByContactInPeriod', () => {
+  it('filters by contact_id and period', () => {
+    mockGetAllSync.mockReturnValue([]);
+    listChargesByContactInPeriod('co-1', '2026-05');
+    const [sql, contactId, p1, p2] = mockGetAllSync.mock.calls[0];
+    expect(sql).toContain('contact_id = ?');
+    expect(sql).toContain('period = ?');
+    expect(sql).toContain('period < ?');
+    expect(contactId).toBe('co-1');
+    expect(p1).toBe('2026-05');
+    expect(p2).toBe('2026-05');
+  });
+});
+
 describe('markOverdue', () => {
   it('calls runSync with an UPDATE that targets pending recurring lines past due', () => {
     mockGetAllSync.mockReturnValue([]);
@@ -108,5 +161,53 @@ describe('markOverdue', () => {
     expect(sql).toContain("status = 'overdue'");
     expect(sql).toContain("status = 'pending'");
     expect(sql).toContain("due_date < date('now')");
+  });
+});
+
+describe('generateChargesForPeriod', () => {
+  it('inserts one charge and lines per contact', () => {
+    const templates = [
+      { contact_id: 'co-1', template_id: 't-1', concept: 'Mensualidad', amount: null, template_amount: 210000, description: null, type: 'recurring' },
+      { contact_id: 'co-2', template_id: 't-1', concept: 'Mensualidad', amount: 150000, template_amount: 210000, description: null, type: 'recurring' },
+    ];
+    mockGetAllSync.mockReturnValueOnce(templates);
+    mockRunSync.mockReturnValue({ changes: 1 });
+
+    generateChargesForPeriod('2026-05', '2026-05-02');
+
+    expect(mockWithTransactionSync).toHaveBeenCalledTimes(1);
+    // 2 charge inserts + 2 line inserts = 4 runSync calls
+    expect(mockRunSync).toHaveBeenCalledTimes(4);
+  });
+
+  it('skips contacts whose charge already exists for the period (idempotency)', () => {
+    const templates = [
+      { contact_id: 'co-1', template_id: 't-1', concept: 'Mensualidad', amount: null, template_amount: 210000, description: null, type: 'recurring' },
+    ];
+    mockGetAllSync.mockReturnValueOnce(templates);
+    // changes === 0 means unique index rejected the insert
+    mockRunSync.mockReturnValue({ changes: 0 });
+
+    generateChargesForPeriod('2026-05', '2026-05-02');
+
+    // charge INSERT OR IGNORE called, but no line inserts since changes === 0
+    expect(mockRunSync).toHaveBeenCalledTimes(1);
+    const [sql] = mockRunSync.mock.calls[0];
+    expect(sql).toContain('INSERT OR IGNORE');
+  });
+
+  it('uses contact_templates.amount override over template default', () => {
+    const templates = [
+      { contact_id: 'co-1', template_id: 't-1', concept: 'Mensualidad', amount: 150000, template_amount: 210000, description: null, type: 'recurring' },
+    ];
+    mockGetAllSync.mockReturnValueOnce(templates);
+    mockRunSync.mockReturnValue({ changes: 1 });
+
+    generateChargesForPeriod('2026-05', '2026-05-02');
+
+    // Line insert is the second runSync call; amount arg should be 150000 (the override)
+    const lineCall = mockRunSync.mock.calls[1];
+    expect(lineCall).toContain(150000);
+    expect(lineCall).not.toContain(210000);
   });
 });

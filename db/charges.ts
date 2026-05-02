@@ -1,5 +1,6 @@
+import * as ExpoCrypto from 'expo-crypto';
 import { getDb } from './database';
-import type { Charge, ChargeFilters, ChargeLine, Summary } from '../lib/types';
+import type { Charge, ChargeFilters, ChargeLine, LineType, Summary } from '../lib/types';
 import type { ExportLineRow } from '../lib/excel';
 import { CHARGE_STATUS } from '../constants/enums';
 
@@ -93,6 +94,7 @@ export function listCharges(filters: ChargeFilters = {}): Charge[] {
        AND (? IS NULL OR c.contact_id = ?)
        AND (? IS NULL OR c.due_date >= ?)
        AND (? IS NULL OR c.due_date <= ?)
+       AND (? IS NULL OR c.period = ?)
      ORDER BY
        CASE c.status WHEN 'overdue' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END,
        CASE WHEN c.status IN ('overdue', 'pending') THEN c.due_date END ASC,
@@ -105,6 +107,58 @@ export function listCharges(filters: ChargeFilters = {}): Charge[] {
     filters.date_from ?? null,
     filters.date_to ?? null,
     filters.date_to ?? null,
+    filters.period ?? null,
+    filters.period ?? null,
+  );
+
+  return rows.map((r) => ({
+    ...r,
+    lines: db.getAllSync<ChargeLine>(
+      `SELECT * FROM charge_lines WHERE charge_id = ? ORDER BY created_at ASC`,
+      r.id,
+    ),
+  }));
+}
+
+// Returns charges for the given period PLUS any unpaid charges from earlier periods.
+export function listChargesForPeriod(period: string): Charge[] {
+  const db = getDb();
+  const rows = db.getAllSync<Omit<Charge, 'lines'>>(
+    `SELECT c.*, co.name as contact_name
+     FROM charges c
+     JOIN contacts co ON c.contact_id = co.id
+     WHERE c.period = ?
+        OR (c.period < ? AND c.status != 'paid')
+     ORDER BY
+       CASE c.status WHEN 'overdue' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END,
+       CASE WHEN c.status IN ('overdue', 'pending') THEN c.due_date END ASC,
+       CASE WHEN c.status = 'paid' THEN c.due_date END DESC`,
+    period,
+    period,
+  );
+
+  return rows.map((r) => ({
+    ...r,
+    lines: db.getAllSync<ChargeLine>(
+      `SELECT * FROM charge_lines WHERE charge_id = ? ORDER BY created_at ASC`,
+      r.id,
+    ),
+  }));
+}
+
+// Returns charges for a single contact in the given period + any unpaid charges from earlier periods.
+export function listChargesByContactInPeriod(contact_id: string, period: string): Charge[] {
+  const db = getDb();
+  const rows = db.getAllSync<Omit<Charge, 'lines'>>(
+    `SELECT c.*, co.name as contact_name
+     FROM charges c
+     JOIN contacts co ON c.contact_id = co.id
+     WHERE c.contact_id = ?
+       AND (c.period = ? OR (c.period < ? AND c.status != 'paid'))
+     ORDER BY c.due_date DESC`,
+    contact_id,
+    period,
+    period,
   );
 
   return rows.map((r) => ({
@@ -123,7 +177,7 @@ export function listChargesByContact(contact_id: string): Charge[] {
      FROM charges c
      JOIN contacts co ON c.contact_id = co.id
      WHERE c.contact_id = ?
-     ORDER BY c.due_date DESC`,
+     ORDER BY c.period DESC, c.due_date DESC`,
     contact_id,
   );
 
@@ -136,14 +190,15 @@ export function listChargesByContact(contact_id: string): Charge[] {
   }));
 }
 
-export function createCharge(charge: { id: string; contact_id: string; due_date: string }): void {
+export function createCharge(charge: { id: string; contact_id: string; period: string; due_date: string }): void {
   const db = getDb();
   const now = new Date().toISOString();
   db.runSync(
-    `INSERT INTO charges (id, contact_id, due_date, status, created_at, updated_at)
-     VALUES (?, ?, ?, 'pending', ?, ?)`,
+    `INSERT INTO charges (id, contact_id, period, due_date, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, 'pending', ?, ?)`,
     charge.id,
     charge.contact_id,
+    charge.period,
     charge.due_date,
     now,
     now,
@@ -154,6 +209,74 @@ export function createCharge(charge: { id: string; contact_id: string; due_date:
 export function refreshChargeStatus(charge_id: string): void {
   const db = getDb();
   syncChargeStatus(db, charge_id);
+}
+
+type ContactWithTemplates = {
+  contact_id: string;
+  template_id: string;
+  concept: string;
+  amount: number | null;       // contact_templates.amount override
+  template_amount: number;     // charge_templates.amount default
+  description: string | null;
+  type: string;
+};
+
+// Creates one charge + lines per active contact that has active templates, for the given period.
+// Idempotent: skips contacts that already have a charge for this period (enforced by unique index).
+export function generateChargesForPeriod(period: string, due_date: string): void {
+  const db = getDb();
+  const now = new Date().toISOString();
+
+  const rows = db.getAllSync<ContactWithTemplates>(
+    `SELECT ct.contact_id, ct.template_id, t.concept,
+            ct.amount, t.amount as template_amount, ct.description, t.type
+     FROM contact_templates ct
+     JOIN charge_templates t ON ct.template_id = t.id
+     JOIN contacts co ON co.id = ct.contact_id
+     WHERE ct.active = 1 AND co.active = 1
+     ORDER BY ct.contact_id, t.concept`,
+  );
+
+  // Group templates by contact
+  const byContact = new Map<string, ContactWithTemplates[]>();
+  for (const row of rows) {
+    const list = byContact.get(row.contact_id) ?? [];
+    list.push(row);
+    byContact.set(row.contact_id, list);
+  }
+
+  db.withTransactionSync(() => {
+    for (const [contact_id, templates] of byContact) {
+      const chargeId = ExpoCrypto.randomUUID();
+      // INSERT OR IGNORE lets the unique index on (contact_id, period) silently skip duplicates
+      const result = db.runSync(
+        `INSERT OR IGNORE INTO charges (id, contact_id, period, due_date, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, 'pending', ?, ?)`,
+        chargeId,
+        contact_id,
+        period,
+        due_date,
+        now,
+        now,
+      );
+      if (result.changes === 0) continue; // already existed for this period
+
+      for (const tpl of templates) {
+        db.runSync(
+          `INSERT INTO charge_lines (id, charge_id, concept, amount, description, type, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
+          ExpoCrypto.randomUUID(),
+          chargeId,
+          tpl.concept,
+          tpl.amount ?? tpl.template_amount,
+          tpl.description ?? null,
+          tpl.type as LineType,
+          now,
+          now,
+        );
+      }
+    }
+  });
 }
 
 export function listAllLinesForExport(): ExportLineRow[] {

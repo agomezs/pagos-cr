@@ -2,11 +2,10 @@ import { useCallback, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import ScreenHeader from "../../../components/ScreenHeader";
-import FloatingActionButton from "../../../components/FloatingActionButton";
-import { getContact, deactivateContact } from "../../../db/contacts";
-import { listChargesByContactInPeriod, refreshChargeStatus } from "../../../db/charges";
+import { getContact } from "../../../db/contacts";
+import { listChargesByContact, refreshChargeStatus } from "../../../db/charges";
 import { unmarkLinePaid } from "../../../db/chargeLines";
-import { formatColones, formatDate, currentPeriod } from "../../../lib/format";
+import { formatColones, formatDate, formatPeriod } from "../../../lib/format";
 import type { Contact, Charge, ChargeLine } from "../../../lib/types";
 import { LABELS } from "../../../constants/labels";
 
@@ -104,7 +103,7 @@ function ChargeSection({ charge, onPay, onUnmark }: {
   );
 }
 
-export default function ContactDetailScreen() {
+export default function ContactHistoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [contact, setContact] = useState<Contact | null>(null);
@@ -114,7 +113,7 @@ export default function ContactDetailScreen() {
     const c = getContact(id);
     if (!c) { router.back(); return; }
     setContact(c);
-    setCharges(listChargesByContactInPeriod(id, currentPeriod()));
+    setCharges(listChargesByContact(id));
   }, [id, router]);
 
   useFocusEffect(load);
@@ -151,95 +150,42 @@ export default function ContactDetailScreen() {
     );
   }
 
-  function handleDelete() {
-    Alert.alert(
-      LABELS.contacts.deleteAlertTitle,
-      LABELS.contacts.deleteAlertMessage(contact?.name ?? ""),
-      [
-        { text: LABELS.common.cancel, style: "cancel" },
-        {
-          text: LABELS.common.delete,
-          style: "destructive",
-          onPress: () => {
-            deactivateContact(id);
-            router.back();
-          },
-        },
-      ],
-    );
-  }
-
   if (!contact) return null;
 
+  // Group charges by period, sorted desc
+  const byPeriod = new Map<string, Charge[]>();
+  for (const charge of charges) {
+    const list = byPeriod.get(charge.period) ?? [];
+    list.push(charge);
+    byPeriod.set(charge.period, list);
+  }
+  const periods = Array.from(byPeriod.keys()).sort((a, b) => b.localeCompare(a));
+
   return (
-    <View className="flex-1">
-      <ScrollView className="flex-1 bg-gray-50" contentContainerClassName="p-4 pb-28 gap-6">
-        {/* Header */}
-        <ScreenHeader title="" onBack={() => router.back()} />
+    <ScrollView className="flex-1 bg-gray-50" contentContainerClassName="p-4 gap-6">
+      {/* Header */}
+      <ScreenHeader title={LABELS.charges.historySectionTitle} onBack={() => router.back()} />
 
-        {/* Info card */}
-        <Pressable onPress={() => router.push(`/contacts/${id}/edit`)} className="active:opacity-70">
-          <View className="bg-white rounded-2xl px-4 py-4 border border-gray-100 gap-3">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-2xl font-bold text-gray-900">{contact.name}</Text>
-              <Text className="text-xl text-gray-300">›</Text>
-            </View>
-            {contact.phone ? (
-              <View className="gap-0.5">
-                <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{LABELS.contacts.fieldPhone}</Text>
-                <Text className="text-base text-gray-700">{contact.phone}</Text>
-              </View>
-            ) : null}
-            {contact.notes ? (
-              <View className="gap-0.5">
-                <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{LABELS.contacts.fieldNotes}</Text>
-                <Text className="text-base text-gray-700">{contact.notes}</Text>
-              </View>
-            ) : null}
-          </View>
-        </Pressable>
+      <Text className="text-lg font-bold text-gray-900">{contact.name}</Text>
 
-        {/* Charges section */}
-        <View className="gap-3">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-base font-semibold text-gray-700">
-              {LABELS.charges.sectionTitle} {charges.length > 0 ? `(${charges.length})` : ""}
-            </Text>
-            <Pressable
-              onPress={() => router.push({ pathname: "/contacts/[id]/history", params: { id } })}
-              className="active:opacity-70"
-            >
-              <Text className="text-sm text-blue-500 font-medium">{LABELS.charges.viewHistory}</Text>
-            </Pressable>
-          </View>
-
-          {charges.length === 0 ? (
-            <View className="bg-white rounded-2xl px-4 py-8 border border-gray-100 items-center gap-2">
-              <Text className="text-3xl">📋</Text>
-              <Text className="text-sm text-gray-400">{LABELS.charges.emptyState}</Text>
-            </View>
-          ) : (
-            <View className="gap-3">
-              {charges.map((charge) => (
-                <ChargeSection key={charge.id} charge={charge} onPay={handlePay} onUnmark={handleUnmark} />
-              ))}
-            </View>
-          )}
+      {charges.length === 0 ? (
+        <View className="bg-white rounded-2xl px-4 py-8 border border-gray-100 items-center gap-2">
+          <Text className="text-3xl">📋</Text>
+          <Text className="text-sm text-gray-400">{LABELS.charges.emptyState}</Text>
         </View>
-
-        {/* Danger zone */}
-        <Pressable
-          onPress={handleDelete}
-          className="rounded-xl py-4 items-center border border-red-200 active:opacity-70"
-        >
-          <Text className="text-red-500 text-base font-semibold">{LABELS.contacts.deleteButton}</Text>
-        </Pressable>
-      </ScrollView>
-
-      {/* FAB — new charge */}
-      <FloatingActionButton
-        onPress={() => router.push({ pathname: "/charges/new", params: { contact_id: id, contact_name: contact.name } })}
-      />
-    </View>
+      ) : (
+        periods.map((period) => (
+          <View key={period} className="gap-3">
+            {/* Period header */}
+            <Text className="text-sm font-bold text-gray-500 uppercase tracking-wide">
+              {formatPeriod(period)}
+            </Text>
+            {(byPeriod.get(period) ?? []).map((charge) => (
+              <ChargeSection key={charge.id} charge={charge} onPay={handlePay} onUnmark={handleUnmark} />
+            ))}
+          </View>
+        ))
+      )}
+    </ScrollView>
   );
 }

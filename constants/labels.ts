@@ -82,6 +82,8 @@ export const LABELS = {
     emptyFiltered: 'Sin cobros',
     emptyFilteredMessage: 'Ningún cobro coincide con los filtros',
     emptyInitialMessage: 'Aún no hay cobros registrados',
+    viewHistory: 'Ver historial completo',
+    historySectionTitle: 'Historial de cobros',
   },
 
   pay: {

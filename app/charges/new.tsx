@@ -70,7 +70,9 @@ export default function NewChargeScreen() {
     if (err) { setError(err); return; }
     setError(null);
     const chargeId = ExpoCrypto.randomUUID();
-    createCharge({ id: chargeId, contact_id, due_date: toISO(dueDate!) });
+    const iso = toISO(dueDate!);
+    const period = iso.slice(0, 7); // YYYY-MM from the due date
+    createCharge({ id: chargeId, contact_id, period, due_date: iso });
     createLine({
       id: ExpoCrypto.randomUUID(),
       charge_id: chargeId,

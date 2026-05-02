@@ -8,12 +8,12 @@ import {
   Text,
   View,
 } from "react-native";
-import { markOverdue, getSummary, listCharges , createCharge } from "../db/charges";
+import { markOverdue, getSummary, listCharges, listChargesForPeriod, createCharge } from "../db/charges";
 import { listContacts, createContact } from "../db/contacts";
 import { createLine } from "../db/chargeLines";
 import { createTemplate } from "../db/chargeTemplates";
 import { getDb } from "../db/database";
-import { formatColones } from "../lib/format";
+import { formatColones, currentPeriod } from "../lib/format";
 import type { Charge, ChargeStatus, Contact, Summary } from "../lib/types";
 import { ChargeCard } from "./dashboard/ChargeCard";
 import { ClientPickerModal } from "./dashboard/ClientPickerModal";
@@ -38,25 +38,25 @@ function seedIfEmpty() {
   createTemplate({ id: "t3", concept: "Guardería", amount: 40000, type: "recurring" });
 
   // May charge: Ana — tuition + ballet
-  createCharge({ id: "ch1", contact_id: "c1", due_date: "2026-05-02" });
+  createCharge({ id: "ch1", contact_id: "c1", period: "2026-05", due_date: "2026-05-02" });
   createLine({ id: "l1", charge_id: "ch1", concept: "Mensualidad mayo", amount: 380000, description: "Lucas + Clarita", type: "recurring" });
   createLine({ id: "l2", charge_id: "ch1", concept: "Ballet", amount: 25000, description: "Clarita", type: "extra" });
 
   // May charge: Luis — tuition
-  createCharge({ id: "ch2", contact_id: "c2", due_date: "2026-05-02" });
+  createCharge({ id: "ch2", contact_id: "c2", period: "2026-05", due_date: "2026-05-02" });
   createLine({ id: "l3", charge_id: "ch2", concept: "Mensualidad mayo", amount: 210000, description: null, type: "recurring" });
 
   // May charge: María — tuition + daycare
-  createCharge({ id: "ch3", contact_id: "c3", due_date: "2026-05-15" });
+  createCharge({ id: "ch3", contact_id: "c3", period: "2026-05", due_date: "2026-05-15" });
   createLine({ id: "l4", charge_id: "ch3", concept: "Mensualidad mayo", amount: 210000, description: null, type: "recurring" });
   createLine({ id: "l5", charge_id: "ch3", concept: "Guardería mayo", amount: 40000, description: null, type: "recurring" });
 
   // April charge: Ana — past due
-  createCharge({ id: "ch4", contact_id: "c1", due_date: "2026-04-02" });
+  createCharge({ id: "ch4", contact_id: "c1", period: "2026-04", due_date: "2026-04-02" });
   createLine({ id: "l6", charge_id: "ch4", concept: "Mensualidad abril", amount: 380000, description: "Lucas + Clarita", type: "recurring" });
 
   // April charge: Luis — already paid
-  createCharge({ id: "ch5", contact_id: "c2", due_date: "2026-04-02" });
+  createCharge({ id: "ch5", contact_id: "c2", period: "2026-04", due_date: "2026-04-02" });
   createLine({ id: "l7", charge_id: "ch5", concept: "Mensualidad abril", amount: 210000, description: null, type: "recurring" });
 
   const db = getDb();
@@ -261,7 +261,21 @@ export default function Dashboard() {
   const load = useCallback(() => {
     markOverdue();
     setSummary(getSummary());
-    setCharges(listCharges({ status: statusFilter, contact_id: contactFilter, date_from: dateFrom, date_to: dateTo }));
+    // When no explicit date range is set, use the period-aware query (current period + unpaid past periods).
+    // When a date range chip is active, fall back to listCharges so the range filter applies.
+    if (dateFrom === null && dateTo === null) {
+      const period = currentPeriod();
+      const all = listChargesForPeriod(period);
+      const filtered = statusFilter || contactFilter
+        ? all.filter((c) =>
+            (!statusFilter || c.status === statusFilter) &&
+            (!contactFilter || c.contact_id === contactFilter)
+          )
+        : all;
+      setCharges(filtered);
+    } else {
+      setCharges(listCharges({ status: statusFilter, contact_id: contactFilter, date_from: dateFrom, date_to: dateTo }));
+    }
   }, [statusFilter, contactFilter, dateFrom, dateTo]);
 
   useEffect(() => {

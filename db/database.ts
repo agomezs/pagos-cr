@@ -51,6 +51,7 @@ function runMigrations(db: SQLite.SQLiteDatabase): void {
     CREATE TABLE IF NOT EXISTS charges (
       id          TEXT PRIMARY KEY,
       contact_id  TEXT NOT NULL REFERENCES contacts(id),
+      period      TEXT NOT NULL,
       due_date    TEXT NOT NULL,
       status      TEXT NOT NULL DEFAULT 'pending',
       created_at  TEXT NOT NULL,
@@ -60,6 +61,8 @@ function runMigrations(db: SQLite.SQLiteDatabase): void {
     CREATE INDEX IF NOT EXISTS idx_charges_contact  ON charges(contact_id);
     CREATE INDEX IF NOT EXISTS idx_charges_status   ON charges(status);
     CREATE INDEX IF NOT EXISTS idx_charges_due_date ON charges(due_date);
+    CREATE INDEX IF NOT EXISTS idx_charges_period   ON charges(period);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_charges_contact_period ON charges(contact_id, period);
 
     CREATE TABLE IF NOT EXISTS charge_lines (
       id             TEXT PRIMARY KEY,

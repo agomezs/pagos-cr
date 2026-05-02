@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
+import FloatingActionButton from "../../components/FloatingActionButton";
 import { deleteTemplate, listTemplates } from "../../db/chargeTemplates";
 import { formatColones } from "../../lib/format";
 import type { ChargeTemplate } from "../../lib/types";
@@ -82,12 +83,7 @@ export default function TemplatesScreen() {
         )}
       />
 
-      <Pressable
-        onPress={() => router.push("/templates/new")}
-        className="absolute bottom-8 right-6 bg-blue-600 w-14 h-14 rounded-full items-center justify-center shadow-lg"
-      >
-        <Text className="text-white text-3xl font-light leading-none">+</Text>
-      </Pressable>
+      <FloatingActionButton onPress={() => router.push("/templates/new")} />
     </SafeAreaView>
   );
 }

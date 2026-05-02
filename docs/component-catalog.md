@@ -147,3 +147,28 @@ import TemplatePickerModal from "../components/TemplatePickerModal";
   onClose={() => setShowTemplates(false)}
 />
 ```
+
+---
+
+## FloatingActionButton
+
+**File:** `components/FloatingActionButton.tsx`  
+**Export:** default
+
+Reusable bottom-right floating action button.
+
+### Props
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `onPress` | `() => void` | yes | Press handler |
+| `label` | `string` | no | Button text (default: `"+"`) |
+| `className` | `string` | no | Extra Tailwind classes |
+
+### Usage
+
+```tsx
+import FloatingActionButton from "../components/FloatingActionButton";
+
+<FloatingActionButton onPress={() => router.push("/templates/new")} />
+```
