@@ -4,6 +4,25 @@ Implementation state of the main operator flows. Each flow has its steps, succes
 
 Status legend: ✅ DONE · 🔄 PARTIAL · ❌ MISSING
 
+## Status summary
+
+| Priority | Flow | Status |
+|----------|------|--------|
+| 1 | Period charge generation | ❌ MISSING |
+| 2 | Dashboard — period view with priority ordering | 🔄 PARTIAL |
+| 3 | Contact detail — current status | 🔄 PARTIAL |
+| 4 | Contact payment history | ❌ MISSING |
+| 5 | Edit contact — monthly amount inline | 🔄 PARTIAL |
+| 6 | Settings screen (import/export + dark mode) | ❌ MISSING |
+| 7 | Add charge to contact | ✅ DONE |
+| 8 | Mark line as paid | ✅ DONE |
+| 9 | Revert payment | ✅ DONE |
+| 10 | Overdue detection | ✅ DONE |
+| 11 | Create / edit / delete template | ✅ DONE |
+| 12 | Assign template to contact | ✅ DONE |
+| 13 | Create contact | ✅ DONE |
+| 14 | Export payment history | ✅ DONE |
+
 ---
 
 ## Contacts

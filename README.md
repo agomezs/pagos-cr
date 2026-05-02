@@ -18,7 +18,7 @@ A React Native mobile app built with Expo for payment processing in Costa Rica.
 Install dependencies:
 
 ```bash
-npm install --legacy-peer-deps
+npm install
 ```
 
 Start the dev server:
@@ -58,7 +58,6 @@ All user-visible strings live in `constants/labels.ts`. Import `LABELS` and refe
 
 ## Notes
 
-- Use `--legacy-peer-deps` when installing packages due to peer dependency conflicts between NativeWind v4 and Gluestack UI v3.
 - Tailwind CSS is pinned to v3 — NativeWind v4 does not support Tailwind v4.
 - `expo-sqlite` is configured as an Expo plugin in `app.json`.
 
