@@ -80,8 +80,9 @@ describe('listChargesByContact', () => {
     const result = listChargesByContact('co-1');
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('ch-1');
-    expect(result[0].lines).toHaveLength(1);
-    expect(result[0].lines[0].concept).toBe('Mensualidad');
+    const lines = result[0].lines ?? [];
+    expect(lines).toHaveLength(1);
+    expect(lines[0].concept).toBe('Mensualidad');
   });
 
   it('returns empty array when contact has no charges', () => {
