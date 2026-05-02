@@ -7,6 +7,7 @@
 3. **Excel import Sheet 3** `MEDIUM` — assignments + amount overrides; after MVP import is validated
 4. **Charge line description pre-fill** `MEDIUM` — depends on Sheet 3
 5. **Excel export date filter** `LOW` — quality of life; add when operator needs it
+6. **expo-file-system/next migration** `LOW` — switch import/export to File.arrayBuffer() once the new API has a stable write(Uint8Array) method
 
 ---
 
@@ -51,6 +52,14 @@ All amounts are stored as plain integers (colones). This breaks down if the app 
 **Recommendation:** store amounts as integers in the smallest unit (e.g. centavos: `₡35,000` → `3500000`), then divide by 100 for display. Matches how Stripe and most financial systems handle money. Requires a one-time migration multiplying all existing values by 100 and updating `formatColones`.
 
 Do during Phase 1B (PocketBase migration) to avoid a mid-phase SQLite migration on production data.
+
+---
+
+## 6. expo-file-system/next migration
+
+`expo-file-system/next` (stable since SDK 54) exposes `File.arrayBuffer()`, which reads binary files directly without a base64 round-trip — measurably faster for large files. Currently blocked because the new API lacks a clean `write(Uint8Array)` method (only streams). Switch when that lands.
+
+Currently importing from `expo-file-system/legacy` (explicit, no deprecation warning). Affected file: `app/(tabs)/importexport.tsx`.
 
 ---
 

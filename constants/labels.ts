@@ -118,6 +118,24 @@ export const LABELS = {
     pickerEmpty: 'No hay plantillas. Crea una desde la pestaña Plantillas.',
   },
 
+  importExport: {
+    tab: 'Archivos',
+    screenTitle: 'Importar / Exportar',
+    importTitle: 'Importar desde Excel',
+    importHint: 'Seleccioná un archivo .xlsx con hoja "contacts" y/o "templates". Los registros existentes no se duplican.',
+    pickFileButton: 'Seleccionar archivo .xlsx',
+    importButton: 'Importar',
+    warningsTitle: 'Filas omitidas',
+    previewContacts: 'Contactos',
+    previewTemplates: 'Plantillas',
+    templateTitle: 'Plantilla de importación',
+    templateHint: 'Descargá el archivo de ejemplo con las columnas correctas para llenar y luego importar.',
+    templateButton: 'Descargar plantilla .xlsx',
+    exportTitle: 'Exportar historial',
+    exportHint: 'Genera un archivo Excel con todas las líneas de cobro registradas.',
+    exportButton: 'Exportar historial',
+  },
+
   dashboard: {
     tab: 'Tablero',
     summaryTitle: 'Resumen',

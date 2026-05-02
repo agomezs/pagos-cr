@@ -95,6 +95,8 @@ Use a chevron `›` (right-aligned, `text-gray-300`) on tappable cards that navi
 
 UI and labels are in Spanish. Code identifiers (table/collection names, column names, types, variables) are in English.
 
+All user-visible strings live in `constants/labels.ts` (`LABELS` const, grouped by domain). Import from there; don't hardcode strings in components.
+
 ## Component Catalog
 
 Reusable components are documented in `docs/component-catalog.md`. Check it before creating new components — props, behavior, and usage examples are there. When adding a new reusable component, add an entry to the catalog.

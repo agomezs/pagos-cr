@@ -1,5 +1,6 @@
 import { getDb } from './database';
 import type { Charge, ChargeFilters, ChargeLine, Summary } from '../lib/types';
+import type { ExportLineRow } from '../lib/excel';
 import { CHARGE_STATUS } from '../constants/enums';
 
 // Derives charge status from its lines and updates the DB.
@@ -153,4 +154,25 @@ export function createCharge(charge: { id: string; contact_id: string; due_date:
 export function refreshChargeStatus(charge_id: string): void {
   const db = getDb();
   syncChargeStatus(db, charge_id);
+}
+
+export function listAllLinesForExport(): ExportLineRow[] {
+  const db = getDb();
+  return db.getAllSync<ExportLineRow>(
+    `SELECT
+       co.name      AS contact_name,
+       co.phone     AS phone,
+       cl.concept   AS concept,
+       cl.description AS description,
+       cl.amount    AS amount,
+       cl.type      AS type,
+       c.due_date   AS due_date,
+       cl.status    AS status,
+       cl.payment_method AS payment_method,
+       cl.paid_at   AS paid_at
+     FROM charge_lines cl
+     JOIN charges c  ON c.id = cl.charge_id
+     JOIN contacts co ON co.id = c.contact_id
+     ORDER BY co.name ASC, c.due_date ASC`,
+  );
 }
