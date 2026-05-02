@@ -16,7 +16,7 @@ import {
 } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { randomUUID } from 'expo-crypto';
-import { parseExcelImport, buildExportWorkbook, buildImportTemplate } from '../../lib/excel';
+import { parseExcelImport, buildExportWorkbook, buildImportTemplate, filterNewContacts, filterNewTemplates } from '../../lib/excel';
 import { createContact, listContacts } from '../../db/contacts';
 import { createTemplate, listTemplates } from '../../db/chargeTemplates';
 import { listAllLinesForExport } from '../../db/charges';
@@ -61,36 +61,18 @@ function useImport() {
   function commit() {
     if (!preview) return;
 
-    const existingContacts = listContacts();
-    const existingTemplates = listTemplates(true);
+    const newContacts = filterNewContacts(preview.contacts, listContacts());
+    const newTemplates = filterNewTemplates(preview.templates, listTemplates(true));
 
-    let contactsAdded = 0;
-    let templatesAdded = 0;
-
-    for (const row of preview.contacts) {
-      const nameNorm = row.name.trim().toLowerCase();
-      const phoneNorm = row.phone?.trim() ?? null;
-      const alreadyExists = existingContacts.some(
-        (c) =>
-          c.name.trim().toLowerCase() === nameNorm &&
-          (phoneNorm === null || (c.phone?.trim() ?? null) === phoneNorm),
-      );
-      if (!alreadyExists) {
-        createContact({ id: randomUUID(), ...row });
-        contactsAdded++;
-      }
+    for (const row of newContacts) {
+      createContact({ id: randomUUID(), ...row });
+    }
+    for (const row of newTemplates) {
+      createTemplate({ id: randomUUID(), ...row });
     }
 
-    for (const row of preview.templates) {
-      const conceptNorm = row.concept.trim().toLowerCase();
-      const alreadyExists = existingTemplates.some(
-        (t) => t.concept.trim().toLowerCase() === conceptNorm,
-      );
-      if (!alreadyExists) {
-        createTemplate({ id: randomUUID(), ...row });
-        templatesAdded++;
-      }
-    }
+    const contactsAdded = newContacts.length;
+    const templatesAdded = newTemplates.length;
 
     setPreview(null);
     Alert.alert(

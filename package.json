@@ -8,8 +8,10 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
-    "lint": "eslint . && tsc --noEmit",
-    "lint:fix": "eslint . --fix"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "check": "concurrently \"npm run lint\" \"npm run typecheck\""
   },
   "dependencies": {
     "@gluestack-ui/button": "~1.0.14",
@@ -53,6 +55,7 @@
     "@types/react": "~19.2.10",
     "@typescript-eslint/eslint-plugin": "~8.59.0",
     "@typescript-eslint/parser": "~8.59.0",
+    "concurrently": "9.2.1",
     "eslint": "~9.39.4",
     "eslint-config-expo": "~55.0.0",
     "eslint-plugin-react-native": "~5.0.0",

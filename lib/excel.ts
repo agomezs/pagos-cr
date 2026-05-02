@@ -112,6 +112,33 @@ export function parseExcelImport(base64: string): ImportResult {
   return result;
 }
 
+// ── Deduplication ─────────────────────────────────────────────────────────────
+
+export function filterNewContacts(
+  rows: ContactRow[],
+  existing: { name: string; phone: string | null }[],
+): ContactRow[] {
+  return rows.filter((row) => {
+    const nameNorm = row.name.trim().toLowerCase();
+    const phoneNorm = row.phone?.trim() ?? null;
+    return !existing.some(
+      (c) =>
+        c.name.trim().toLowerCase() === nameNorm &&
+        (phoneNorm === null || (c.phone?.trim() ?? null) === phoneNorm),
+    );
+  });
+}
+
+export function filterNewTemplates(
+  rows: TemplateRow[],
+  existing: { concept: string }[],
+): TemplateRow[] {
+  return rows.filter((row) => {
+    const conceptNorm = row.concept.trim().toLowerCase();
+    return !existing.some((t) => t.concept.trim().toLowerCase() === conceptNorm);
+  });
+}
+
 // ── Import template ───────────────────────────────────────────────────────────
 
 export function buildImportTemplate(): string {

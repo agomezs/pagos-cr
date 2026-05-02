@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { parseExcelImport, buildExportWorkbook, buildImportTemplate } from '../lib/excel';
+import { parseExcelImport, buildExportWorkbook, buildImportTemplate, filterNewContacts, filterNewTemplates } from '../lib/excel';
 import type { ExportLineRow } from '../lib/excel';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ function makeWorkbook(sheets: Record<string, Record<string, unknown>[]>): string
 }
 
 const CONTACT_ROW = { name: 'Ana Rodríguez', phone: '+506 8888-1234', email: 'ana@gmail.com', monthly_amount: 120000, notes: 'Mariana + Luis' };
-const TEMPLATE_ROW = { concept: 'Mensualidad mayo', amount: 120000, type: 'recurring' };
+const TEMPLATE_ROW = { concept: 'Mensualidad mayo', amount: 120000, type: 'recurring' as const };
 
 const EXPORT_LINE: ExportLineRow = {
   contact_name: 'Ana Rodríguez',
@@ -182,6 +182,81 @@ describe('parseExcelImport — no recognized sheet', () => {
     expect(result.templates).toHaveLength(0);
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]).toMatch(/contacts/);
+  });
+});
+
+// ── filterNewContacts ──────────────────────────────────────────────────────
+
+describe('filterNewContacts', () => {
+  const existing = [
+    { name: 'Ana Rodríguez', phone: '+506 8888-1234' },
+    { name: 'Juan Mora', phone: null },
+  ];
+
+  it('keeps contacts not in the existing list', () => {
+    const rows = [{ name: 'Carlos Vega', phone: '+506 7777-0000', email: null, monthly_amount: null, notes: null }];
+    expect(filterNewContacts(rows, existing)).toHaveLength(1);
+  });
+
+  it('removes contacts that match by name + phone', () => {
+    const rows = [{ name: 'Ana Rodríguez', phone: '+506 8888-1234', email: null, monthly_amount: null, notes: null }];
+    expect(filterNewContacts(rows, existing)).toHaveLength(0);
+  });
+
+  it('is case-insensitive on name', () => {
+    const rows = [{ name: 'ana rodríguez', phone: '+506 8888-1234', email: null, monthly_amount: null, notes: null }];
+    expect(filterNewContacts(rows, existing)).toHaveLength(0);
+  });
+
+  it('trims whitespace before comparing', () => {
+    const rows = [{ name: '  Ana Rodríguez  ', phone: '+506 8888-1234', email: null, monthly_amount: null, notes: null }];
+    expect(filterNewContacts(rows, existing)).toHaveLength(0);
+  });
+
+  it('keeps contact when name matches but phone differs', () => {
+    const rows = [{ name: 'Ana Rodríguez', phone: '+506 9999-0000', email: null, monthly_amount: null, notes: null }];
+    expect(filterNewContacts(rows, existing)).toHaveLength(1);
+  });
+
+  it('removes contact when incoming phone is null and name matches', () => {
+    const rows = [{ name: 'Juan Mora', phone: null, email: null, monthly_amount: null, notes: null }];
+    expect(filterNewContacts(rows, existing)).toHaveLength(0);
+  });
+
+  it('returns all rows when existing list is empty', () => {
+    const rows = [CONTACT_ROW];
+    expect(filterNewContacts(rows, [])).toHaveLength(1);
+  });
+});
+
+// ── filterNewTemplates ─────────────────────────────────────────────────────
+
+describe('filterNewTemplates', () => {
+  const existing = [{ concept: 'Mensualidad' }, { concept: 'Matrícula' }];
+
+  it('keeps templates not in the existing list', () => {
+    const rows = [{ concept: 'Ballet', amount: 25000, type: 'extra' as const }];
+    expect(filterNewTemplates(rows, existing)).toHaveLength(1);
+  });
+
+  it('removes templates that match by concept', () => {
+    const rows = [{ concept: 'Mensualidad', amount: 120000, type: 'recurring' as const }];
+    expect(filterNewTemplates(rows, existing)).toHaveLength(0);
+  });
+
+  it('is case-insensitive on concept', () => {
+    const rows = [{ concept: 'MENSUALIDAD', amount: 120000, type: 'recurring' as const }];
+    expect(filterNewTemplates(rows, existing)).toHaveLength(0);
+  });
+
+  it('trims whitespace before comparing', () => {
+    const rows = [{ concept: '  Matrícula  ', amount: 50000, type: 'extra' as const }];
+    expect(filterNewTemplates(rows, existing)).toHaveLength(0);
+  });
+
+  it('returns all rows when existing list is empty', () => {
+    const rows = [TEMPLATE_ROW];
+    expect(filterNewTemplates(rows, [])).toHaveLength(1);
   });
 });
 

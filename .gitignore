@@ -150,3 +150,6 @@ vite.config.ts.timestamp-*
 
 # macOS
 .DS_Store
+
+# Local data (not source code — real user data, scripts)
+local/
