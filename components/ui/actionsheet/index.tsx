@@ -49,19 +49,19 @@ cssInterop(UIActionsheet.Backdrop, { className: 'style' });
 const actionsheetStyle = tva({ base: 'w-full h-full' });
 
 const actionsheetContentStyle = tva({
-  base: 'items-center rounded-tl-3xl rounded-tr-3xl p-5 pt-2 bg-white shadow-lg border border-b-0 border-gray-100',
+  base: 'items-center rounded-tl-3xl rounded-tr-3xl p-5 pt-2 bg-white dark:bg-gray-900 shadow-lg border border-b-0 border-gray-100 dark:border-gray-700',
 });
 
 const actionsheetItemStyle = tva({
-  base: 'w-full flex-row items-center p-3 rounded-lg active:bg-gray-100 gap-2',
+  base: 'w-full flex-row items-center p-3 rounded-lg active:bg-gray-100 dark:active:bg-gray-800 gap-2',
 });
 
 const actionsheetItemTextStyle = tva({
-  base: 'text-gray-700 text-sm font-normal',
+  base: 'text-gray-700 dark:text-gray-300 text-sm font-normal',
 });
 
 const actionsheetDragIndicatorStyle = tva({
-  base: 'w-10 h-1 bg-gray-300 rounded-full',
+  base: 'w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full',
 });
 
 const actionsheetDragIndicatorWrapperStyle = tva({

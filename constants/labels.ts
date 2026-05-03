@@ -123,6 +123,7 @@ export const LABELS = {
   settings: {
     tab: 'Ajustes',
     screenTitle: 'Ajustes',
+    darkMode: 'Modo oscuro',
   },
 
   importExport: {

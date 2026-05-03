@@ -21,7 +21,7 @@ export default function ScreenHeader({ title, onBack, right }: Props) {
             <Text className="text-blue-600 text-base font-medium">{LABELS.common.back}</Text>
           </Pressable>
         )}
-        <Text className="text-xl font-bold text-gray-900">{title}</Text>
+        <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">{title}</Text>
       </View>
       {right}
     </View>

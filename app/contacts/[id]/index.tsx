@@ -23,9 +23,9 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_BG: Record<string, string> = {
-  pending: "bg-yellow-50 border-yellow-100",
-  overdue: "bg-red-50 border-red-100",
-  paid: "bg-green-50 border-green-100",
+  pending: "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-100 dark:border-yellow-800",
+  overdue: "bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800",
+  paid: "bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800",
 };
 
 function LineRow({ line, onPay, onUnmark }: {
@@ -37,10 +37,10 @@ function LineRow({ line, onPay, onUnmark }: {
   return (
     <Pressable
       onPress={() => canPay ? onPay(line) : undefined}
-      className={`rounded-xl px-4 py-3 border gap-1 ${STATUS_BG[line.status] ?? "bg-white border-gray-100"} active:opacity-70`}
+      className={`rounded-xl px-4 py-3 border gap-1 ${STATUS_BG[line.status] ?? "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"} active:opacity-70`}
     >
       <View className="flex-row items-center justify-between">
-        <Text className="text-sm font-semibold text-gray-900 flex-1 mr-2" numberOfLines={1}>
+        <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex-1 mr-2" numberOfLines={1}>
           {line.concept}
         </Text>
         <Text className={`text-xs font-semibold ${STATUS_COLOR[line.status] ?? "text-gray-600"}`}>
@@ -48,20 +48,20 @@ function LineRow({ line, onPay, onUnmark }: {
         </Text>
       </View>
       {line.description ? (
-        <Text className="text-xs text-gray-500">{line.description}</Text>
+        <Text className="text-xs text-gray-500 dark:text-gray-400">{line.description}</Text>
       ) : null}
       <View className="flex-row items-center justify-between">
-        <Text className="text-xs text-gray-400">
+        <Text className="text-xs text-gray-400 dark:text-gray-500">
           {line.type === "recurring" ? LABELS.charges.lineTypeRecurring : LABELS.charges.lineTypeExtra}
         </Text>
-        <Text className="text-sm font-medium text-gray-700">{formatColones(line.amount)}</Text>
+        <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">{formatColones(line.amount)}</Text>
       </View>
       {canPay && (
         <Text className="text-xs text-blue-500 font-medium mt-0.5">{LABELS.charges.tapToPayHint}</Text>
       )}
       {line.status === "paid" && (
         <View className="flex-row items-center justify-between mt-0.5">
-          <Text className="text-xs text-gray-400">
+          <Text className="text-xs text-gray-400 dark:text-gray-500">
             {line.paid_at ? `${LABELS.charges.paidPrefix} ${formatDate(line.paid_at)}` : LABELS.status.paid}
             {line.payment_method ? ` · ${line.payment_method.toUpperCase()}` : ""}
           </Text>
@@ -83,10 +83,10 @@ function ChargeSection({ charge, onPay, onUnmark }: {
   const unpaidTotal = lines.filter((l) => l.status !== "paid").reduce((s, l) => s + l.amount, 0);
 
   return (
-    <View className={`rounded-2xl border overflow-hidden ${STATUS_BG[charge.status] ?? "bg-white border-gray-100"}`}>
+    <View className={`rounded-2xl border overflow-hidden ${STATUS_BG[charge.status] ?? "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"}`}>
       {/* Charge header */}
       <View className="px-4 pt-3 pb-2 flex-row items-center justify-between">
-        <Text className="text-xs font-semibold text-gray-500">
+        <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400">
           {LABELS.charges.duePrefix} {formatDate(charge.due_date)}
         </Text>
         <Text className={`text-xs font-bold ${STATUS_COLOR[charge.status] ?? "text-gray-600"}`}>
@@ -173,27 +173,27 @@ export default function ContactDetailScreen() {
 
   return (
     <View className="flex-1">
-      <ScrollView className="flex-1 bg-gray-50" contentContainerClassName="p-4 pb-28 gap-6">
+      <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900" contentContainerClassName="p-4 pb-28 gap-6">
         {/* Header */}
         <ScreenHeader title="" onBack={() => router.back()} />
 
         {/* Info card */}
         <Pressable onPress={() => router.push(`/contacts/${id}/edit`)} className="active:opacity-70">
-          <View className="bg-white rounded-2xl px-4 py-4 border border-gray-100 gap-3">
+          <View className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-4 border border-gray-100 dark:border-gray-700 gap-3">
             <View className="flex-row items-center justify-between">
-              <Text className="text-2xl font-bold text-gray-900">{contact.name}</Text>
+              <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100">{contact.name}</Text>
               <Text className="text-xl text-gray-300">›</Text>
             </View>
             {contact.phone ? (
               <View className="gap-0.5">
-                <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{LABELS.contacts.fieldPhone}</Text>
-                <Text className="text-base text-gray-700">{contact.phone}</Text>
+                <Text className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">{LABELS.contacts.fieldPhone}</Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">{contact.phone}</Text>
               </View>
             ) : null}
             {contact.notes ? (
               <View className="gap-0.5">
-                <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{LABELS.contacts.fieldNotes}</Text>
-                <Text className="text-base text-gray-700">{contact.notes}</Text>
+                <Text className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">{LABELS.contacts.fieldNotes}</Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">{contact.notes}</Text>
               </View>
             ) : null}
           </View>
@@ -202,7 +202,7 @@ export default function ContactDetailScreen() {
         {/* Charges section */}
         <View className="gap-3">
           <View className="flex-row items-center justify-between">
-            <Text className="text-base font-semibold text-gray-700">
+            <Text className="text-base font-semibold text-gray-700 dark:text-gray-300">
               {LABELS.charges.sectionTitle} {charges.length > 0 ? `(${charges.length})` : ""}
             </Text>
             <Pressable
@@ -214,9 +214,9 @@ export default function ContactDetailScreen() {
           </View>
 
           {charges.length === 0 ? (
-            <View className="bg-white rounded-2xl px-4 py-8 border border-gray-100 items-center gap-2">
+            <View className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-8 border border-gray-100 dark:border-gray-700 items-center gap-2">
               <Text className="text-3xl">📋</Text>
-              <Text className="text-sm text-gray-400">{LABELS.charges.emptyState}</Text>
+              <Text className="text-sm text-gray-400 dark:text-gray-500">{LABELS.charges.emptyState}</Text>
             </View>
           ) : (
             <View className="gap-3">
@@ -230,7 +230,7 @@ export default function ContactDetailScreen() {
         {/* Danger zone */}
         <Pressable
           onPress={handleDelete}
-          className="rounded-xl py-4 items-center border border-red-200 active:opacity-70"
+          className="rounded-xl py-4 items-center border border-red-200 dark:border-red-800 active:opacity-70"
         >
           <Text className="text-red-500 text-base font-semibold">{LABELS.contacts.deleteButton}</Text>
         </Pressable>

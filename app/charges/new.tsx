@@ -88,7 +88,7 @@ export default function NewChargeScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-gray-50"
+      className="flex-1 bg-gray-50 dark:bg-gray-900"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
@@ -100,30 +100,30 @@ export default function NewChargeScreen() {
 
         {/* Contacto (read-only) */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">{LABELS.charges.fieldContact}</Text>
-          <View className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-3">
-            <Text className="text-base text-gray-600">{contact_name ?? contact_id}</Text>
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">{LABELS.charges.fieldContact}</Text>
+          <View className="bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3">
+            <Text className="text-base text-gray-600 dark:text-gray-300">{contact_name ?? contact_id}</Text>
           </View>
         </View>
 
         {/* Template picker trigger */}
         <Pressable
           onPress={openTemplatePicker}
-          className="border border-blue-200 bg-blue-50 rounded-xl px-4 py-3 flex-row items-center justify-between active:opacity-70"
+          className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 rounded-xl px-4 py-3 flex-row items-center justify-between active:opacity-70"
         >
-          <Text className="text-blue-700 text-sm font-medium">{LABELS.charges.useTemplate}</Text>
-          <Text className="text-blue-400 text-sm">›</Text>
+          <Text className="text-blue-700 dark:text-blue-400 text-sm font-medium">{LABELS.charges.useTemplate}</Text>
+          <Text className="text-blue-400 dark:text-blue-500 text-sm">›</Text>
         </Pressable>
 
         {/* Concepto */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             {LABELS.charges.fieldConcept} <Text className="text-red-500">*</Text>
           </Text>
           <TextInput
-            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-gray-100"
             placeholder={LABELS.charges.placeholderConcept}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#6b7280"
             value={concept}
             onChangeText={(t) => { setConcept(t.slice(0, 200)); setError(null); }}
             autoFocus
@@ -133,13 +133,13 @@ export default function NewChargeScreen() {
 
         {/* Descripción (opcional) */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             {LABELS.charges.fieldDescription} <Text className="text-gray-400 font-normal">{LABELS.common.optional}</Text>
           </Text>
           <TextInput
-            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-gray-100"
             placeholder={LABELS.charges.placeholderDescription}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#6b7280"
             value={description}
             onChangeText={setDescription}
             returnKeyType="next"
@@ -148,13 +148,13 @@ export default function NewChargeScreen() {
 
         {/* Monto */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             {LABELS.charges.fieldAmount} <Text className="text-red-500">*</Text>
           </Text>
           <TextInput
-            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-gray-100"
             placeholder={LABELS.charges.placeholderAmount}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#6b7280"
             value={amount}
             onChangeText={(t) => { setAmount(t.replace(/[^0-9]/g, "")); setError(null); }}
             keyboardType="number-pad"
@@ -164,15 +164,15 @@ export default function NewChargeScreen() {
 
         {/* Tipo */}
         <View className="gap-2">
-          <Text className="text-sm font-semibold text-gray-700">{LABELS.charges.fieldLineType}</Text>
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">{LABELS.charges.fieldLineType}</Text>
           <View className="flex-row gap-2">
             {([["recurring", LABELS.charges.lineTypeRecurring], ["extra", LABELS.charges.lineTypeExtra]] as const).map(([val, label]) => (
               <Pressable
                 key={val}
                 onPress={() => setLineType(val)}
-                className={`flex-1 py-3 rounded-xl items-center border ${lineType === val ? "bg-blue-600 border-blue-600" : "bg-white border-gray-200"} active:opacity-70`}
+                className={`flex-1 py-3 rounded-xl items-center border ${lineType === val ? "bg-blue-600 border-blue-600" : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600"} active:opacity-70`}
               >
-                <Text className={`text-sm font-semibold ${lineType === val ? "text-white" : "text-gray-700"}`}>{label}</Text>
+                <Text className={`text-sm font-semibold ${lineType === val ? "text-white" : "text-gray-700 dark:text-gray-300"}`}>{label}</Text>
               </Pressable>
             ))}
           </View>
@@ -180,14 +180,14 @@ export default function NewChargeScreen() {
 
         {/* Fecha de vencimiento */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             {LABELS.charges.fieldDueDate} <Text className="text-red-500">*</Text>
           </Text>
           <Pressable
             onPress={() => setShowPicker(true)}
-            className="bg-white border border-gray-200 rounded-xl px-4 py-3 active:opacity-70"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 active:opacity-70"
           >
-            <Text className={dueDate ? "text-base text-gray-900" : "text-base text-gray-400"}>
+            <Text className={dueDate ? "text-base text-gray-900 dark:text-gray-100" : "text-base text-gray-400 dark:text-gray-500"}>
               {dueDate ? formatDate(toISO(dueDate)) : LABELS.charges.placeholderDueDate}
             </Text>
           </Pressable>
@@ -213,7 +213,7 @@ export default function NewChargeScreen() {
         </View>
 
         {error && (
-          <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+          <View className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
             <Text className="text-red-600 text-sm">{error}</Text>
           </View>
         )}
@@ -222,9 +222,9 @@ export default function NewChargeScreen() {
         <Pressable
           onPress={handleSave}
           disabled={!canSave}
-          className={`rounded-xl py-4 items-center ${canSave ? "bg-blue-600" : "bg-gray-200"}`}
+          className={`rounded-xl py-4 items-center ${canSave ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"}`}
         >
-          <Text className={`text-base font-semibold ${canSave ? "text-white" : "text-gray-400"}`}>
+          <Text className={`text-base font-semibold ${canSave ? "text-white" : "text-gray-400 dark:text-gray-500"}`}>
             {LABELS.common.save}
           </Text>
         </Pressable>

@@ -12,7 +12,7 @@ Gluestack UI v3 components are scaffolded into `components/ui/` via the CLI — 
 npx gluestack-ui add <component>   # e.g. actionsheet, modal, toast
 ```
 
-**Currently scaffolded:** `actionsheet`, `button`, `gluestack-ui-provider`
+**Currently scaffolded:** `actionsheet`, `button`, `gluestack-ui-provider`, `switch`
 
 **Full catalog available to add:** Accordion, Alert, AlertDialog, Avatar, Badge, BottomSheet, Box, Button, Card, Center, Checkbox, Divider, Drawer, Fab, FormControl, Grid, Heading, HStack, Icon, Image, Input, Link, Menu, Modal, Popover, Portal, Progress, Pressable, Radio, Select, Skeleton, Slider, Spinner, Switch, Table, Text, Textarea, Toast, Tooltip, VStack.
 

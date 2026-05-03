@@ -92,19 +92,19 @@ function StatCard({ label, count, amount, bg, active, onPress }: StatCardProps) 
 function SummaryPanel({ summary, statusFilter, onStatusPress }: { summary: Summary; statusFilter: ChargeStatus | null; onStatusPress: (s: ChargeStatus) => void }) {
   return (
     <View className="px-4 pt-4 pb-2 gap-3">
-      <Text className="text-xl font-bold text-gray-900">{LABELS.dashboard.summaryTitle}</Text>
+      <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">{LABELS.dashboard.summaryTitle}</Text>
       <View className="flex-row gap-3">
         <StatCard label={LABELS.status.pending} count={summary.pendingCount} amount={summary.totalPending} bg="#3b82f6" active={statusFilter === "pending"} onPress={() => onStatusPress("pending")} />
         <StatCard label={LABELS.status.overdue} count={summary.overdueCount} amount={summary.totalOverdue} bg="#ef4444" active={statusFilter === "overdue"} onPress={() => onStatusPress("overdue")} />
       </View>
       <View className="flex-row gap-3">
         <StatCard label={LABELS.status.paid} count={summary.paidCount} amount={summary.totalPaid} bg="#16a34a" active={statusFilter === "paid"} onPress={() => onStatusPress("paid")} />
-        <View className="flex-1 rounded-2xl p-4 bg-gray-100 gap-1 justify-center">
-          <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{LABELS.dashboard.totalReceivable}</Text>
-          <Text className="text-2xl font-bold text-gray-800">
+        <View className="flex-1 rounded-2xl p-4 bg-gray-100 dark:bg-gray-800 gap-1 justify-center">
+          <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{LABELS.dashboard.totalReceivable}</Text>
+          <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100">
             {formatColones(summary.totalPending + summary.totalOverdue)}
           </Text>
-          <Text className="text-xs text-gray-500">
+          <Text className="text-xs text-gray-500 dark:text-gray-400">
             {summary.pendingCount + summary.overdueCount} {(summary.pendingCount + summary.overdueCount) !== 1 ? LABELS.charges.chargePlural : LABELS.charges.chargeSingular}
           </Text>
         </View>
@@ -138,7 +138,7 @@ function StatusSegmentedControl({
   onChange: (v: ChargeStatus | null) => void;
 }) {
   return (
-    <View className="mx-4 mt-3 mb-1 flex-row bg-gray-100 rounded-xl p-1 gap-0.5">
+    <View className="mx-4 mt-3 mb-1 flex-row bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-0.5">
       {SEGMENTS.map((s) => {
         const selected = active === s.value;
         return (
@@ -147,7 +147,7 @@ function StatusSegmentedControl({
             onPress={() => onChange(s.value)}
             className={`flex-1 py-2 items-center rounded-lg active:opacity-70 ${selected ? (SEGMENT_ACTIVE_COLOR[String(s.value)] ?? "bg-gray-800") : ""}`}
           >
-            <Text className={`text-xs font-semibold ${selected ? "text-white" : "text-gray-500"}`}>
+            <Text className={`text-xs font-semibold ${selected ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>
               {s.label}
             </Text>
           </Pressable>
@@ -203,13 +203,13 @@ function SecondaryFilterRow({
       <Pressable
         onPress={onContactPress}
         className={`flex-row items-center gap-1 px-3.5 py-1.5 rounded-full border ${
-          contactFilter ? "bg-indigo-600 border-indigo-600" : "bg-white border-gray-300"
+          contactFilter ? "bg-indigo-600 border-indigo-600" : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
         } active:opacity-70`}
       >
-        <Text className={`text-sm font-semibold ${contactFilter ? "text-white" : "text-gray-600"}`}>
+        <Text className={`text-sm font-semibold ${contactFilter ? "text-white" : "text-gray-600 dark:text-gray-300"}`}>
           {selectedContact ? selectedContact.name : LABELS.dashboard.filterContact}
         </Text>
-        <Text className={`text-xs ${contactFilter ? "text-white/70" : "text-gray-400"}`}>
+        <Text className={`text-xs ${contactFilter ? "text-white/70" : "text-gray-400 dark:text-gray-500"}`}>
           {contactFilter ? "✕" : "▾"}
         </Text>
       </Pressable>
@@ -222,10 +222,10 @@ function SecondaryFilterRow({
             key={r.label}
             onPress={() => onDateRange(active ? null : r.from, active ? null : r.to)}
             className={`px-3.5 py-1.5 rounded-full border ${
-              active ? "bg-gray-900 border-gray-900" : "bg-white border-gray-300"
+              active ? "bg-gray-900 border-gray-900" : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
             } active:opacity-70`}
           >
-            <Text className={`text-sm font-semibold ${active ? "text-white" : "text-gray-600"}`}>
+            <Text className={`text-sm font-semibold ${active ? "text-white" : "text-gray-600 dark:text-gray-300"}`}>
               {r.label}
             </Text>
           </Pressable>
@@ -307,7 +307,7 @@ export default function Dashboard() {
         />
 
         {/* Sticky filter area */}
-        <View className="bg-gray-50 border-b border-gray-100 pb-1">
+        <View className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 pb-1">
           <StatusSegmentedControl active={statusFilter} onChange={setStatusFilter} />
           <SecondaryFilterRow
             contactFilter={contactFilter}
@@ -323,7 +323,7 @@ export default function Dashboard() {
         <View className="pt-3 pb-24">
           {hasFilters && (
             <View className="px-4 pb-2 flex-row items-center justify-between">
-              <Text className="text-xs text-gray-400">{charges.length} {charges.length !== 1 ? LABELS.charges.resultPlural : LABELS.charges.resultSingular}</Text>
+              <Text className="text-xs text-gray-400 dark:text-gray-500">{charges.length} {charges.length !== 1 ? LABELS.charges.resultPlural : LABELS.charges.resultSingular}</Text>
               <Pressable
                 onPress={() => {
                   setStatusFilter(null);
@@ -341,8 +341,8 @@ export default function Dashboard() {
           {charges.length === 0 ? (
             <View className="items-center py-16 gap-2">
               <Text className="text-4xl">📋</Text>
-              <Text className="text-base font-medium text-gray-500">{LABELS.charges.emptyFiltered}</Text>
-              <Text className="text-sm text-gray-400">
+              <Text className="text-base font-medium text-gray-500 dark:text-gray-400">{LABELS.charges.emptyFiltered}</Text>
+              <Text className="text-sm text-gray-400 dark:text-gray-500">
                 {hasFilters ? LABELS.charges.emptyFilteredMessage : LABELS.charges.emptyInitialMessage}
               </Text>
             </View>
