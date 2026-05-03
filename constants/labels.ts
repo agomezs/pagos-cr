@@ -84,6 +84,11 @@ export const LABELS = {
     emptyInitialMessage: 'Aún no hay cobros registrados',
     viewHistory: 'Ver historial completo',
     historySectionTitle: 'Historial de cobros',
+    statusUpToDate: 'Al día',
+    statusHasOverdue: 'Tiene cobros vencidos',
+    statusHasPending: 'Tiene cobros pendientes',
+    statusNoCharges: 'Sin cobros este período',
+    statusDebtLabel: 'Por pagar',
   },
 
   pay: {

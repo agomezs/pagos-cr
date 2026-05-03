@@ -85,6 +85,8 @@ Gluestack components are styled with Tailwind classes via NativeWind, and the br
 
 Always prefer Gluestack UI v3 components over custom implementations — check `docs/component-catalog.md` for what is already scaffolded and what is available to add.
 
+**Dark mode:** `tailwind.config.js` uses `darkMode: 'class'`, which lets NativeWind's `setColorScheme` toggle dark mode at runtime. `lib/theme.tsx` provides `ThemeProvider` and `useTheme()` — use `colorScheme` from there when you need to branch on the current theme in JS (e.g. icon colors, StatusBar style). For everything else, use Tailwind `dark:` variants directly on `className`. Preference is persisted to `AsyncStorage` and restored on launch. New screens and components must include `dark:` variants on every background, border, and text color.
+
 ## React Conventions
 
 Extract a component when it genuinely simplifies the code — e.g. the logic is reused in multiple places, or the JSX block is large enough that inlining it obscures the parent's intent. Don't extract for its own sake: a small, one-off piece of JSX belongs inline.

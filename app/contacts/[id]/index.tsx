@@ -74,6 +74,51 @@ function LineRow({ line, onPay, onUnmark }: {
   );
 }
 
+function StatusBanner({ charges }: { charges: Charge[] }) {
+  const allLines = charges.flatMap((c) => c.lines ?? []);
+  const overdueAmount = allLines.filter((l) => l.status === "overdue").reduce((s, l) => s + l.amount, 0);
+  const pendingAmount = allLines.filter((l) => l.status === "pending").reduce((s, l) => s + l.amount, 0);
+
+  let label: string;
+  let sublabel: string | null = null;
+  let colorClass: string;
+  let bgClass: string;
+  let borderClass: string;
+
+  if (charges.length === 0) {
+    label = LABELS.charges.statusNoCharges;
+    colorClass = "text-gray-500 dark:text-gray-400";
+    bgClass = "bg-gray-50 dark:bg-gray-800";
+    borderClass = "border-gray-200 dark:border-gray-700";
+  } else if (overdueAmount > 0) {
+    label = LABELS.charges.statusHasOverdue;
+    sublabel = `${LABELS.charges.statusDebtLabel}: ${formatColones(overdueAmount)}`;
+    colorClass = "text-red-600 dark:text-red-400";
+    bgClass = "bg-red-50 dark:bg-red-900/20";
+    borderClass = "border-red-200 dark:border-red-800";
+  } else if (pendingAmount > 0) {
+    label = LABELS.charges.statusHasPending;
+    sublabel = `${LABELS.charges.statusDebtLabel}: ${formatColones(pendingAmount)}`;
+    colorClass = "text-yellow-600 dark:text-yellow-400";
+    bgClass = "bg-yellow-50 dark:bg-yellow-900/20";
+    borderClass = "border-yellow-200 dark:border-yellow-800";
+  } else {
+    label = LABELS.charges.statusUpToDate;
+    colorClass = "text-green-600 dark:text-green-400";
+    bgClass = "bg-green-50 dark:bg-green-900/20";
+    borderClass = "border-green-200 dark:border-green-800";
+  }
+
+  return (
+    <View className={`rounded-2xl px-4 py-3 border ${bgClass} ${borderClass}`}>
+      <Text className={`text-base font-bold ${colorClass}`}>{label}</Text>
+      {sublabel ? (
+        <Text className={`text-sm font-medium ${colorClass} opacity-80 mt-0.5`}>{sublabel}</Text>
+      ) : null}
+    </View>
+  );
+}
+
 function ChargeSection({ charge, onPay, onUnmark }: {
   charge: Charge;
   onPay: (line: ChargeLine) => void;
@@ -198,6 +243,9 @@ export default function ContactDetailScreen() {
             ) : null}
           </View>
         </Pressable>
+
+        {/* Status banner */}
+        <StatusBanner charges={charges} />
 
         {/* Charges section */}
         <View className="gap-3">

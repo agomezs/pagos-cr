@@ -10,7 +10,7 @@ Status legend: ✅ DONE · 🔄 PARTIAL · ❌ MISSING
 |----------|------|--------|
 | 1 | Period charge generation | 🔄 PARTIAL |
 | 2 | Dashboard — period view with priority ordering | 🔄 PARTIAL |
-| 3 | Contact detail — current status | 🔄 PARTIAL |
+| 3 | Contact detail — current status | ✅ DONE |
 | 4 | Contact payment history | ✅ DONE |
 | 5 | Edit contact — monthly amount inline | 🔄 PARTIAL |
 | 6 | Settings screen (import/export + dark mode) | ✅ DONE |
@@ -53,7 +53,7 @@ Status legend: ✅ DONE · 🔄 PARTIAL · ❌ MISSING
 
 ---
 
-### Contact detail — current status  🔄 PARTIAL
+### Contact detail — current status  ✅ DONE
 
 1. Operator opens a contact
 2. Sees at a glance whether the contact is up to date or has pending/overdue charges
@@ -63,8 +63,6 @@ Status legend: ✅ DONE · 🔄 PARTIAL · ❌ MISSING
 **Success:** Operator knows immediately if a contact owes anything without scrolling through history
 
 **Tests:** `charges.test.ts` → `listChargesByContact`
-
-**Gap:** The screen shows current-period charges + unpaid past charges. No "up to date / has debt" summary banner at the top.
 
 ---
 
