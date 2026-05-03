@@ -13,7 +13,7 @@ Status legend: ✅ DONE · 🔄 PARTIAL · ❌ MISSING
 | 3 | Contact detail — current status | 🔄 PARTIAL |
 | 4 | Contact payment history | ✅ DONE |
 | 5 | Edit contact — monthly amount inline | 🔄 PARTIAL |
-| 6 | Settings screen (import/export + dark mode) | ❌ MISSING |
+| 6 | Settings screen (import/export + dark mode) | 🔄 PARTIAL |
 | 7 | Add charge to contact | ✅ DONE |
 | 8 | Mark line as paid | ✅ DONE |
 | 9 | Revert payment | ✅ DONE |
@@ -235,10 +235,13 @@ Runs automatically on dashboard load.
 
 ---
 
-### Settings screen  ❌ MISSING
+### Settings screen  🔄 PARTIAL
 
-A dedicated Settings tab or screen consolidating:
-- Import / Export (currently a standalone tab)
-- Dark / light mode toggle
+Accessible via gear icon (⚙) in the Dashboard header — slides up as a bottom sheet.
+
+Planned sections:
+- Import / Export — ❌ not yet wired into sheet
+- Dark / light mode toggle — ❌ not yet implemented
+- User profile — ❌ planned for Phase 1B
 
 **Non-goal:** No other settings in Phase 1

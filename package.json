@@ -15,11 +15,14 @@
     "check": "concurrently \"npm run lint\" \"npm run typecheck\""
   },
   "dependencies": {
+    "@expo/html-elements": "~0.12.5",
+    "@gluestack-ui/actionsheet": "~0.2.53",
     "@gluestack-ui/button": "~1.0.14",
     "@gluestack-ui/nativewind-utils": "~1.0.28",
     "@gluestack-ui/overlay": "~0.1.22",
     "@gluestack-ui/pressable": "~0.1.23",
     "@gluestack-ui/toast": "~1.0.9",
+    "@legendapp/motion": "^2.5.3",
     "@react-native-community/datetimepicker": "~8.6.0",
     "@react-navigation/bottom-tabs": "~7.15.5",
     "@react-navigation/native": "~7.2.2",

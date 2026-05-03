@@ -120,6 +120,11 @@ export const LABELS = {
     pickerEmpty: 'No hay plantillas. Crea una desde la pestaña Plantillas.',
   },
 
+  settings: {
+    tab: 'Ajustes',
+    screenTitle: 'Ajustes',
+  },
+
   importExport: {
     tab: 'Archivos',
     screenTitle: 'Importar / Exportar',

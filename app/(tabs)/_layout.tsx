@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { LayoutDashboard, Users, FileText, ArrowLeftRight } from "lucide-react-native";
+import { LayoutDashboard, Users, FileText } from "lucide-react-native";
 import { LABELS } from "../../constants/labels";
 
 export default function TabsLayout() {
@@ -32,15 +32,8 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="importexport"
-        options={{
-          title: LABELS.importExport.tab,
-          tabBarIcon: ({ color, size }) => (
-            <ArrowLeftRight color={color} size={size} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="settings" options={{ href: null }} />
+      <Tabs.Screen name="importexport" options={{ href: null }} />
     </Tabs>
   );
 }
