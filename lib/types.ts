@@ -31,6 +31,7 @@ export type ChargeLine = {
 export type Charge = {
   id: string;
   contact_id: string;
+  period: string;
   due_date: string;
   status: ChargeStatus;
   created_at: string;
@@ -80,4 +81,5 @@ export type ChargeFilters = {
   contact_id?: string | null;
   date_from?: string | null;
   date_to?: string | null;
+  period?: string | null;
 };

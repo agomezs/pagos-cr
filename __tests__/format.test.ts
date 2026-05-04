@@ -1,4 +1,4 @@
-import { formatColones, formatDate } from '../lib/format';
+import { formatColones, formatDate, currentPeriod, formatPeriod } from '../lib/format';
 
 describe('formatColones', () => {
   it('formats integer colones with ₡ prefix and thousand separator', () => {
@@ -40,5 +40,29 @@ describe('formatDate', () => {
       const mm = String(i + 1).padStart(2, '0');
       expect(formatDate(`2026-${mm}-10`)).toBe(`10 ${abbr} 2026`);
     });
+  });
+});
+
+describe('currentPeriod', () => {
+  it('returns current year and month as YYYY-MM', () => {
+    const result = currentPeriod();
+    expect(result).toMatch(/^\d{4}-\d{2}$/);
+    const now = new Date();
+    const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    expect(result).toBe(expected);
+  });
+});
+
+describe('formatPeriod', () => {
+  it('formats each month name correctly', () => {
+    const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
+    months.forEach((name, i) => {
+      const mm = String(i + 1).padStart(2, '0');
+      expect(formatPeriod(`2026-${mm}`)).toBe(`${name} 2026`);
+    });
+  });
+
+  it('includes the year', () => {
+    expect(formatPeriod('2025-01')).toBe('Enero 2025');
   });
 });

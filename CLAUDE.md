@@ -79,7 +79,13 @@ Shared types are in `lib/types.ts`: `Contact`, `Charge`, `ChargeLine`, `ChargeTe
 
 ### Styling
 
-NativeWind v4 (Tailwind v3 — **do not upgrade to Tailwind v4**). Global styles in `global.css`. Gluestack UI v3 for UI primitives. `lucide-react-native` for icons.
+The UI stack is **Gluestack UI v3**, which uses NativeWind v4 (Tailwind v3) as its internal styling engine — they are not two separate tools. Do not upgrade to Tailwind v4. Global styles in `global.css`. `lucide-react-native` for icons.
+
+Gluestack components are styled with Tailwind classes via NativeWind, and the bridge is `@gluestack-ui/nativewind-utils` (provides `tva`, state hooks, etc.).
+
+Always prefer Gluestack UI v3 components over custom implementations — check `docs/component-catalog.md` for what is already scaffolded and what is available to add.
+
+**Dark mode:** `tailwind.config.js` uses `darkMode: 'class'`, which lets NativeWind's `setColorScheme` toggle dark mode at runtime. `lib/theme.tsx` provides `ThemeProvider` and `useTheme()` — use `colorScheme` from there when you need to branch on the current theme in JS (e.g. icon colors, StatusBar style). For everything else, use Tailwind `dark:` variants directly on `className`. Preference is persisted to `AsyncStorage` and restored on launch. New screens and components must include `dark:` variants on every background, border, and text color.
 
 ## React Conventions
 

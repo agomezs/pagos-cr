@@ -2,11 +2,10 @@ import { useCallback, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import ScreenHeader from "../../../components/ScreenHeader";
-import FloatingActionButton from "../../../components/FloatingActionButton";
 import { getContact } from "../../../db/contacts";
-import { listChargesByContactInPeriod, refreshChargeStatus } from "../../../db/charges";
+import { listChargesByContact, refreshChargeStatus } from "../../../db/charges";
 import { unmarkLinePaid } from "../../../db/chargeLines";
-import { formatColones, formatDate, currentPeriod } from "../../../lib/format";
+import { formatColones, formatDate, formatPeriod } from "../../../lib/format";
 import type { Contact, Charge, ChargeLine } from "../../../lib/types";
 import { LABELS } from "../../../constants/labels";
 
@@ -74,51 +73,6 @@ function LineRow({ line, onPay, onUnmark }: {
   );
 }
 
-function StatusBanner({ charges }: { charges: Charge[] }) {
-  const allLines = charges.flatMap((c) => c.lines ?? []);
-  const overdueAmount = allLines.filter((l) => l.status === "overdue").reduce((s, l) => s + l.amount, 0);
-  const pendingAmount = allLines.filter((l) => l.status === "pending").reduce((s, l) => s + l.amount, 0);
-
-  let label: string;
-  let sublabel: string | null = null;
-  let colorClass: string;
-  let bgClass: string;
-  let borderClass: string;
-
-  if (charges.length === 0) {
-    label = LABELS.charges.statusNoCharges;
-    colorClass = "text-gray-500 dark:text-gray-400";
-    bgClass = "bg-gray-50 dark:bg-gray-800";
-    borderClass = "border-gray-200 dark:border-gray-700";
-  } else if (overdueAmount > 0) {
-    label = LABELS.charges.statusHasOverdue;
-    sublabel = `${LABELS.charges.statusDebtLabel}: ${formatColones(overdueAmount)}`;
-    colorClass = "text-red-600 dark:text-red-400";
-    bgClass = "bg-red-50 dark:bg-red-900/20";
-    borderClass = "border-red-200 dark:border-red-800";
-  } else if (pendingAmount > 0) {
-    label = LABELS.charges.statusHasPending;
-    sublabel = `${LABELS.charges.statusDebtLabel}: ${formatColones(pendingAmount)}`;
-    colorClass = "text-yellow-600 dark:text-yellow-400";
-    bgClass = "bg-yellow-50 dark:bg-yellow-900/20";
-    borderClass = "border-yellow-200 dark:border-yellow-800";
-  } else {
-    label = LABELS.charges.statusUpToDate;
-    colorClass = "text-green-600 dark:text-green-400";
-    bgClass = "bg-green-50 dark:bg-green-900/20";
-    borderClass = "border-green-200 dark:border-green-800";
-  }
-
-  return (
-    <View className={`rounded-2xl px-4 py-3 border ${bgClass} ${borderClass}`}>
-      <Text className={`text-base font-bold ${colorClass}`}>{label}</Text>
-      {sublabel ? (
-        <Text className={`text-sm font-medium ${colorClass} opacity-80 mt-0.5`}>{sublabel}</Text>
-      ) : null}
-    </View>
-  );
-}
-
 function ChargeSection({ charge, onPay, onUnmark }: {
   charge: Charge;
   onPay: (line: ChargeLine) => void;
@@ -131,7 +85,7 @@ function ChargeSection({ charge, onPay, onUnmark }: {
     <View className={`rounded-2xl border overflow-hidden ${STATUS_BG[charge.status] ?? "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"}`}>
       {/* Charge header */}
       <View className="px-4 pt-3 pb-2 flex-row items-center justify-between">
-        <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+        <Text className="text-xs font-semibold text-gray-500">
           {LABELS.charges.duePrefix} {formatDate(charge.due_date)}
         </Text>
         <Text className={`text-xs font-bold ${STATUS_COLOR[charge.status] ?? "text-gray-600"}`}>
@@ -149,7 +103,7 @@ function ChargeSection({ charge, onPay, onUnmark }: {
   );
 }
 
-export default function ContactDetailScreen() {
+export default function ContactHistoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [contact, setContact] = useState<Contact | null>(null);
@@ -159,7 +113,7 @@ export default function ContactDetailScreen() {
     const c = getContact(id);
     if (!c) { router.back(); return; }
     setContact(c);
-    setCharges(listChargesByContactInPeriod(id, currentPeriod()));
+    setCharges(listChargesByContact(id));
   }, [id, router]);
 
   useFocusEffect(load);
@@ -198,71 +152,40 @@ export default function ContactDetailScreen() {
 
   if (!contact) return null;
 
+  // Group charges by period, sorted desc
+  const byPeriod = new Map<string, Charge[]>();
+  for (const charge of charges) {
+    const list = byPeriod.get(charge.period) ?? [];
+    list.push(charge);
+    byPeriod.set(charge.period, list);
+  }
+  const periods = Array.from(byPeriod.keys()).sort((a, b) => b.localeCompare(a));
+
   return (
-    <View className="flex-1">
-      <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900" contentContainerClassName="p-4 pb-28 gap-6">
-        {/* Header */}
-        <ScreenHeader title="" onBack={() => router.back()} />
+    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-900" contentContainerClassName="p-4 gap-6">
+      {/* Header */}
+      <ScreenHeader title={LABELS.charges.historySectionTitle} onBack={() => router.back()} />
 
-        {/* Info card */}
-        <Pressable onPress={() => router.push(`/contacts/${id}/edit`)} className="active:opacity-70">
-          <View className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-4 border border-gray-100 dark:border-gray-700 gap-3">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100">{contact.name}</Text>
-              <Text className="text-xl text-gray-300">›</Text>
-            </View>
-            {contact.phone ? (
-              <View className="gap-0.5">
-                <Text className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">{LABELS.contacts.fieldPhone}</Text>
-                <Text className="text-base text-gray-700 dark:text-gray-300">{contact.phone}</Text>
-              </View>
-            ) : null}
-            {contact.notes ? (
-              <View className="gap-0.5">
-                <Text className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">{LABELS.contacts.fieldNotes}</Text>
-                <Text className="text-base text-gray-700 dark:text-gray-300">{contact.notes}</Text>
-              </View>
-            ) : null}
-          </View>
-        </Pressable>
+      <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{contact.name}</Text>
 
-        {/* Status banner */}
-        <StatusBanner charges={charges} />
-
-        {/* Charges section */}
-        <View className="gap-3">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-base font-semibold text-gray-700 dark:text-gray-300">
-              {LABELS.charges.sectionTitle} {charges.length > 0 ? `(${charges.length})` : ""}
-            </Text>
-            <Pressable
-              onPress={() => router.push({ pathname: "/contacts/[id]/history", params: { id } })}
-              className="active:opacity-70"
-            >
-              <Text className="text-sm text-blue-500 font-medium">{LABELS.charges.viewHistory}</Text>
-            </Pressable>
-          </View>
-
-          {charges.length === 0 ? (
-            <View className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-8 border border-gray-100 dark:border-gray-700 items-center gap-2">
-              <Text className="text-3xl">📋</Text>
-              <Text className="text-sm text-gray-400 dark:text-gray-500">{LABELS.charges.emptyState}</Text>
-            </View>
-          ) : (
-            <View className="gap-3">
-              {charges.map((charge) => (
-                <ChargeSection key={charge.id} charge={charge} onPay={handlePay} onUnmark={handleUnmark} />
-              ))}
-            </View>
-          )}
+      {charges.length === 0 ? (
+        <View className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-8 border border-gray-100 dark:border-gray-700 items-center gap-2">
+          <Text className="text-3xl">📋</Text>
+          <Text className="text-sm text-gray-400 dark:text-gray-500">{LABELS.charges.emptyState}</Text>
         </View>
-
-      </ScrollView>
-
-      {/* FAB — new charge */}
-      <FloatingActionButton
-        onPress={() => router.push({ pathname: "/charges/new", params: { contact_id: id, contact_name: contact.name } })}
-      />
-    </View>
+      ) : (
+        periods.map((period) => (
+          <View key={period} className="gap-3">
+            {/* Period header */}
+            <Text className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              {formatPeriod(period)}
+            </Text>
+            {(byPeriod.get(period) ?? []).map((charge) => (
+              <ChargeSection key={charge.id} charge={charge} onPay={handlePay} onUnmark={handleUnmark} />
+            ))}
+          </View>
+        ))
+      )}
+    </ScrollView>
   );
 }

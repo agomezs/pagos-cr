@@ -4,6 +4,52 @@ Reference for LLMs and developers. Each entry documents props, behavior, and usa
 
 ---
 
+## Gluestack UI components
+
+Gluestack UI v3 components are scaffolded into `components/ui/` via the CLI — they are not npm packages.
+
+```bash
+npx gluestack-ui add <component>   # e.g. actionsheet, modal, toast
+```
+
+**Currently scaffolded:** `actionsheet`, `button`, `gluestack-ui-provider`, `switch`
+
+**Full catalog available to add:** Accordion, Alert, AlertDialog, Avatar, Badge, BottomSheet, Box, Button, Card, Center, Checkbox, Divider, Drawer, Fab, FormControl, Grid, Heading, HStack, Icon, Image, Input, Link, Menu, Modal, Popover, Portal, Progress, Pressable, Radio, Select, Skeleton, Slider, Spinner, Switch, Table, Text, Textarea, Toast, Tooltip, VStack.
+
+Always prefer scaffolding a Gluestack component over building a custom implementation for UI primitives (modals, sheets, toasts, form controls, overlays, etc.).
+
+---
+
+## SettingsSheet
+
+**File:** `components/SettingsSheet.tsx`  
+**Export:** default
+
+Bottom sheet for app settings, built with Gluestack `Actionsheet`. Opens from the gear icon in the Dashboard header.
+
+### Props
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `visible` | `boolean` | yes | Controls sheet visibility |
+| `onClose` | `() => void` | yes | Called when backdrop is tapped or sheet is dismissed |
+
+### Behavior
+
+- Slides up with Gluestack's built-in spring animation
+- Backdrop tap dismisses the sheet
+- Drag indicator at the top
+
+### Usage
+
+```tsx
+import SettingsSheet from "../components/SettingsSheet";
+
+<SettingsSheet visible={settingsOpen} onClose={() => setSettingsOpen(false)} />
+```
+
+---
+
 ## ScreenHeader
 
 **File:** `components/ScreenHeader.tsx`  
@@ -146,4 +192,29 @@ import TemplatePickerModal from "../components/TemplatePickerModal";
   }}
   onClose={() => setShowTemplates(false)}
 />
+```
+
+---
+
+## FloatingActionButton
+
+**File:** `components/FloatingActionButton.tsx`  
+**Export:** default
+
+Reusable bottom-right floating action button.
+
+### Props
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `onPress` | `() => void` | yes | Press handler |
+| `label` | `string` | no | Button text (default: `"+"`) |
+| `className` | `string` | no | Extra Tailwind classes |
+
+### Usage
+
+```tsx
+import FloatingActionButton from "../components/FloatingActionButton";
+
+<FloatingActionButton onPress={() => router.push("/templates/new")} />
 ```

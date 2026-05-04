@@ -29,6 +29,9 @@ Join table: which templates are assigned to which contact. Drives automatic char
 
 Charge header per contact per period. `status` is derived from its lines — never set manually.
 
+- `period` — `YYYY-MM` string identifying the billing period (e.g. `2026-05`). Unique per `(contact_id, period)` — enforced by a DB unique index so bulk generation is idempotent.
+- `due_date` — the actual payment deadline, which can differ from the period (e.g. a May charge due June 15).
+
 ### `charge_lines`
 
 One line item per charge. Each line is paid independently. `description` is free text for recipient names (e.g. "Lucas + Clarita") — no `beneficiaries` table in Phase 1.
@@ -67,7 +70,8 @@ contacts                        charge_templates
 +------------------+            | amount                    |  ← overrides template default
 | id               |            | description               |  ← seeds charge_lines.description
 | contact_id (FK)  |            | active                    |
-| due_date         |            +---------------------------+
+| period           |            +---------------------------+
+| due_date         |
 | status           |  ← derived: pending | overdue | paid
 +------------------+
         |

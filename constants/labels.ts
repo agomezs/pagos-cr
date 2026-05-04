@@ -82,6 +82,13 @@ export const LABELS = {
     emptyFiltered: 'Sin cobros',
     emptyFilteredMessage: 'Ningún cobro coincide con los filtros',
     emptyInitialMessage: 'Aún no hay cobros registrados',
+    viewHistory: 'Ver historial completo',
+    historySectionTitle: 'Historial de cobros',
+    statusUpToDate: 'Al día',
+    statusHasOverdue: 'Tiene cobros vencidos',
+    statusHasPending: 'Tiene cobros pendientes',
+    statusNoCharges: 'Sin cobros este período',
+    statusDebtLabel: 'Por pagar',
   },
 
   pay: {
@@ -118,6 +125,12 @@ export const LABELS = {
     pickerEmpty: 'No hay plantillas. Crea una desde la pestaña Plantillas.',
   },
 
+  settings: {
+    tab: 'Ajustes',
+    screenTitle: 'Ajustes',
+    darkMode: 'Modo oscuro',
+  },
+
   importExport: {
     tab: 'Archivos',
     screenTitle: 'Importar / Exportar',
@@ -140,6 +153,7 @@ export const LABELS = {
     tab: 'Tablero',
     summaryTitle: 'Resumen',
     filterAll: 'Todos',
+    filterActive: 'Activos',
     filterContact: 'Contacto',
     rangePrevMonth: 'Mes ant.',
     rangeThisMonth: 'Este mes',

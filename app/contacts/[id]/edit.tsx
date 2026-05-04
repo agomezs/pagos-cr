@@ -11,8 +11,9 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ScreenHeader from "../../../components/ScreenHeader";
-import { getContact, updateContact } from "../../../db/contacts";
+import { getContact, updateContact, deactivateContact } from "../../../db/contacts";
 import { LABELS } from "../../../constants/labels";
+import DestructiveDialog from "../../../components/alert/DestructiveDialog";
 
 export default function EditContactScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -56,7 +57,7 @@ export default function EditContactScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-gray-50"
+      className="flex-1 bg-gray-50 dark:bg-gray-900"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
@@ -68,13 +69,13 @@ export default function EditContactScreen() {
 
         {/* Nombre */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             {LABELS.contacts.fieldName} <Text className="text-red-500">*</Text>
           </Text>
           <TextInput
-            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-gray-100"
             placeholder={LABELS.contacts.placeholderName}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#6b7280"
             value={name}
             onChangeText={(t) => {
               setName(t.slice(0, 200));
@@ -88,11 +89,11 @@ export default function EditContactScreen() {
 
         {/* Teléfono */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">{LABELS.contacts.fieldPhone}</Text>
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">{LABELS.contacts.fieldPhone}</Text>
           <TextInput
-            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-gray-100"
             placeholder={LABELS.contacts.placeholderPhone}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#6b7280"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
@@ -102,11 +103,11 @@ export default function EditContactScreen() {
 
         {/* Email */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">{LABELS.contacts.fieldEmail}</Text>
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">{LABELS.contacts.fieldEmail}</Text>
           <TextInput
-            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-gray-100"
             placeholder={LABELS.contacts.placeholderEmail}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#6b7280"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -117,11 +118,11 @@ export default function EditContactScreen() {
 
         {/* Mensualidad */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">{LABELS.contacts.fieldMonthlyAmount}</Text>
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">{LABELS.contacts.fieldMonthlyAmount}</Text>
           <TextInput
-            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-gray-100"
             placeholder={LABELS.contacts.placeholderMonthlyAmount}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#6b7280"
             value={monthlyAmount}
             onChangeText={(t) => setMonthlyAmount(t.replace(/[^0-9]/g, ""))}
             keyboardType="number-pad"
@@ -131,11 +132,11 @@ export default function EditContactScreen() {
 
         {/* Notas */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">{LABELS.contacts.fieldNotes}</Text>
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">{LABELS.contacts.fieldNotes}</Text>
           <TextInput
-            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-gray-100"
             placeholder={LABELS.contacts.placeholderNotes}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#6b7280"
             value={notes}
             onChangeText={(t) => setNotes(t.slice(0, 500))}
             multiline
@@ -149,16 +150,26 @@ export default function EditContactScreen() {
         <Pressable
           onPress={handleSave}
           disabled={!canSave}
-          className={`rounded-xl py-4 items-center ${canSave ? "bg-blue-600" : "bg-gray-200"}`}
+          className={`rounded-xl py-4 items-center ${canSave ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"}`}
         >
-          <Text className={`text-base font-semibold ${canSave ? "text-white" : "text-gray-400"}`}>
+          <Text className={`text-base font-semibold ${canSave ? "text-white" : "text-gray-400 dark:text-gray-500"}`}>
             {LABELS.common.saveChanges}
           </Text>
         </Pressable>
+
+        {/* Eliminar */}
+        <DestructiveDialog
+          trigger={LABELS.contacts.deleteButton}
+          title={LABELS.contacts.deleteAlertTitle}
+          message={LABELS.contacts.deleteAlertMessage(name)}
+          confirmLabel={LABELS.contacts.deleteButton}
+          onConfirm={() => { deactivateContact(id); router.dismiss(2); }}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
 
 const styles = StyleSheet.create({
   notesInput: { minHeight: 80 },

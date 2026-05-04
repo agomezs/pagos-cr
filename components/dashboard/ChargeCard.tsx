@@ -5,9 +5,9 @@ import type { Charge, ChargeStatus } from "../../lib/types";
 import { LABELS } from "../../constants/labels";
 
 const STATUS_STYLE: Record<ChargeStatus, { badge: string; text: string; label: string }> = {
-  pending: { badge: "bg-blue-100",  text: "text-blue-700",  label: LABELS.status.pending },
-  overdue: { badge: "bg-red-100",   text: "text-red-700",   label: LABELS.status.overdue },
-  paid:    { badge: "bg-green-100", text: "text-green-700", label: LABELS.status.paid },
+  pending: { badge: "bg-blue-100 dark:bg-blue-900/40",  text: "text-blue-700 dark:text-blue-400",  label: LABELS.status.pending },
+  overdue: { badge: "bg-red-100 dark:bg-red-900/40",   text: "text-red-700 dark:text-red-400",   label: LABELS.status.overdue },
+  paid:    { badge: "bg-green-100 dark:bg-green-900/40", text: "text-green-700 dark:text-green-400", label: LABELS.status.paid },
 };
 
 export function ChargeCard({ charge }: { charge: Charge }) {
@@ -33,14 +33,14 @@ export function ChargeCard({ charge }: { charge: Charge }) {
   return (
     <Pressable
       onPress={handlePress}
-      className={`mx-4 mb-3 bg-white rounded-2xl p-4 border border-gray-100 active:opacity-70 ${charge.status === "overdue" ? "border-l-4 border-l-red-400" : ""}`}
+      className={`mx-4 mb-3 bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 active:opacity-70 ${charge.status === "overdue" ? "border-l-4 border-l-red-400" : ""}`}
     >
       <View className="flex-row items-start justify-between gap-2">
         <View className="flex-1 gap-0.5">
-          <Text className="text-base font-semibold text-gray-900" numberOfLines={1}>
+          <Text className="text-base font-semibold text-gray-900 dark:text-gray-100" numberOfLines={1}>
             {charge.contact_name}
           </Text>
-          <Text className="text-sm text-gray-500" numberOfLines={1}>
+          <Text className="text-sm text-gray-500 dark:text-gray-400" numberOfLines={1}>
             {firstLineConcept}{extraCount > 0 ? ` +${extraCount}` : ""}
           </Text>
         </View>
@@ -51,14 +51,14 @@ export function ChargeCard({ charge }: { charge: Charge }) {
 
       <View className="mt-3 flex-row items-end justify-between">
         <View className="gap-0.5">
-          <Text className="text-xs text-gray-400">
+          <Text className="text-xs text-gray-400 dark:text-gray-500">
             {paidLine?.paid_at
               ? `${LABELS.charges.paidPrefix} ${formatDate(paidLine.paid_at)}`
               : `${LABELS.charges.duePrefixShort} ${formatDate(charge.due_date)}`}
           </Text>
         </View>
         <View className="flex-row items-center gap-1.5">
-          <Text className="text-lg font-bold text-gray-900">{formatColones(displayAmount)}</Text>
+          <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatColones(displayAmount)}</Text>
           <Text className="text-gray-300 text-base">›</Text>
         </View>
       </View>

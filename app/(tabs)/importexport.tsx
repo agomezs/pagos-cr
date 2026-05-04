@@ -140,17 +140,17 @@ export default function ImportExportScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-gray-50">
+    <SafeAreaView edges={['top']} className="flex-1 bg-gray-50 dark:bg-gray-900">
       <View className="px-4 pb-3">
-        <Text className="text-xl font-bold text-gray-900">{LABELS.importExport.screenTitle}</Text>
+        <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">{LABELS.importExport.screenTitle}</Text>
       </View>
 
       <ScrollView className="flex-1" contentContainerClassName="px-4 pt-2 pb-24 gap-4">
 
         {/* Import */}
-        <View className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 gap-3">
-          <Text className="text-base font-semibold text-gray-900">{LABELS.importExport.importTitle}</Text>
-          <Text className="text-sm text-gray-500">{LABELS.importExport.importHint}</Text>
+        <View className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 gap-3">
+          <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">{LABELS.importExport.importTitle}</Text>
+          <Text className="text-sm text-gray-500 dark:text-gray-400">{LABELS.importExport.importHint}</Text>
 
           {loading ? (
             <ActivityIndicator className="py-4" />
@@ -167,9 +167,9 @@ export default function ImportExportScreen() {
         </View>
 
         {/* Download template */}
-        <View className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 gap-3">
-          <Text className="text-base font-semibold text-gray-900">{LABELS.importExport.templateTitle}</Text>
-          <Text className="text-sm text-gray-500">{LABELS.importExport.templateHint}</Text>
+        <View className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 gap-3">
+          <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">{LABELS.importExport.templateTitle}</Text>
+          <Text className="text-sm text-gray-500 dark:text-gray-400">{LABELS.importExport.templateHint}</Text>
           <Pressable
             onPress={handleDownloadTemplate}
             disabled={downloadingTemplate}
@@ -184,9 +184,9 @@ export default function ImportExportScreen() {
         </View>
 
         {/* Export */}
-        <View className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 gap-3">
-          <Text className="text-base font-semibold text-gray-900">{LABELS.importExport.exportTitle}</Text>
-          <Text className="text-sm text-gray-500">{LABELS.importExport.exportHint}</Text>
+        <View className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 gap-3">
+          <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">{LABELS.importExport.exportTitle}</Text>
+          <Text className="text-sm text-gray-500 dark:text-gray-400">{LABELS.importExport.exportHint}</Text>
 
           <Pressable
             onPress={handleExport}
@@ -222,21 +222,21 @@ function PreviewPanel({
   return (
     <View className="gap-3">
       {/* Summary counts */}
-      <View className="bg-gray-50 rounded-xl p-3 gap-1">
-        <Text className="text-sm text-gray-700">
+      <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 gap-1">
+        <Text className="text-sm text-gray-700 dark:text-gray-300">
           <Text className="font-semibold">{preview.contacts.length}</Text> contacto(s) encontrado(s)
         </Text>
-        <Text className="text-sm text-gray-700">
+        <Text className="text-sm text-gray-700 dark:text-gray-300">
           <Text className="font-semibold">{preview.templates.length}</Text> plantilla(s) encontrada(s)
         </Text>
       </View>
 
       {/* Errors */}
       {preview.errors.length > 0 && (
-        <View className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 gap-1">
-          <Text className="text-sm font-semibold text-yellow-800">{LABELS.importExport.warningsTitle}</Text>
+        <View className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-3 gap-1">
+          <Text className="text-sm font-semibold text-yellow-800 dark:text-yellow-400">{LABELS.importExport.warningsTitle}</Text>
           {preview.errors.map((e, i) => (
-            <Text key={i} className="text-xs text-yellow-700">• {e}</Text>
+            <Text key={i} className="text-xs text-yellow-700 dark:text-yellow-500">• {e}</Text>
           ))}
         </View>
       )}
@@ -244,12 +244,12 @@ function PreviewPanel({
       {/* Contacts preview */}
       {preview.contacts.length > 0 && (
         <View className="gap-1">
-          <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{LABELS.importExport.previewContacts}</Text>
+          <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{LABELS.importExport.previewContacts}</Text>
           {preview.contacts.slice(0, 5).map((c, i) => (
-            <Text key={i} className="text-sm text-gray-700">• {c.name}{c.phone ? ` — ${c.phone}` : ''}</Text>
+            <Text key={i} className="text-sm text-gray-700 dark:text-gray-300">• {c.name}{c.phone ? ` — ${c.phone}` : ''}</Text>
           ))}
           {preview.contacts.length > 5 && (
-            <Text className="text-xs text-gray-400">… y {preview.contacts.length - 5} más</Text>
+            <Text className="text-xs text-gray-400 dark:text-gray-500">… y {preview.contacts.length - 5} más</Text>
           )}
         </View>
       )}
@@ -257,12 +257,12 @@ function PreviewPanel({
       {/* Templates preview */}
       {preview.templates.length > 0 && (
         <View className="gap-1">
-          <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{LABELS.importExport.previewTemplates}</Text>
+          <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{LABELS.importExport.previewTemplates}</Text>
           {preview.templates.slice(0, 5).map((t, i) => (
-            <Text key={i} className="text-sm text-gray-700">• {t.concept} — ₡{t.amount.toLocaleString('es-CR')}</Text>
+            <Text key={i} className="text-sm text-gray-700 dark:text-gray-300">• {t.concept} — ₡{t.amount.toLocaleString('es-CR')}</Text>
           ))}
           {preview.templates.length > 5 && (
-            <Text className="text-xs text-gray-400">… y {preview.templates.length - 5} más</Text>
+            <Text className="text-xs text-gray-400 dark:text-gray-500">… y {preview.templates.length - 5} más</Text>
           )}
         </View>
       )}
@@ -271,9 +271,9 @@ function PreviewPanel({
       <View className="flex-row gap-2 pt-1">
         <Pressable
           onPress={onCancel}
-          className="flex-1 border border-gray-200 rounded-xl py-3 items-center active:opacity-70"
+          className="flex-1 border border-gray-200 dark:border-gray-600 rounded-xl py-3 items-center active:opacity-70"
         >
-          <Text className="text-gray-600 font-semibold text-sm">{LABELS.common.cancel}</Text>
+          <Text className="text-gray-600 dark:text-gray-300 font-semibold text-sm">{LABELS.common.cancel}</Text>
         </Pressable>
         {hasData && (
           <Pressable

@@ -61,7 +61,7 @@ export default function PayLineScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-gray-50"
+      className="flex-1 bg-gray-50 dark:bg-gray-900"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
@@ -72,22 +72,22 @@ export default function PayLineScreen() {
         <ScreenHeader title={LABELS.pay.screenTitle} onBack={() => router.back()} />
 
         {/* Charge summary */}
-        <View className="bg-white rounded-2xl px-4 py-4 border border-gray-100 gap-2">
-          <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+        <View className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-4 border border-gray-100 dark:border-gray-700 gap-2">
+          <Text className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
             {LABELS.pay.chargeHeader}
           </Text>
-          <Text className="text-base font-semibold text-gray-900">{concept}</Text>
+          <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">{concept}</Text>
           {contact_name ? (
-            <Text className="text-sm text-gray-500">{contact_name}</Text>
+            <Text className="text-sm text-gray-500 dark:text-gray-400">{contact_name}</Text>
           ) : null}
-          <Text className="text-lg font-bold text-gray-800 mt-1">
+          <Text className="text-lg font-bold text-gray-800 dark:text-gray-200 mt-1">
             {formatColones(parseInt(amount ?? "0", 10))}
           </Text>
         </View>
 
         {/* Método de pago */}
         <View className="gap-2">
-          <Text className="text-sm font-semibold text-gray-700">
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             {LABELS.pay.fieldPaymentMethod} <Text className="text-red-500">*</Text>
           </Text>
           <View className="flex-row gap-2">
@@ -98,10 +98,10 @@ export default function PayLineScreen() {
                   key={value}
                   onPress={() => { setMethod(value); setError(null); }}
                   className={`flex-1 py-3 rounded-xl items-center border ${
-                    selected ? "bg-blue-600 border-blue-600" : "bg-white border-gray-200"
+                    selected ? "bg-blue-600 border-blue-600" : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600"
                   } active:opacity-70`}
                 >
-                  <Text className={`text-sm font-semibold ${selected ? "text-white" : "text-gray-700"}`}>
+                  <Text className={`text-sm font-semibold ${selected ? "text-white" : "text-gray-700 dark:text-gray-300"}`}>
                     {label}
                   </Text>
                 </Pressable>
@@ -112,12 +112,12 @@ export default function PayLineScreen() {
 
         {/* Fecha de pago */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">{LABELS.pay.fieldPaymentDate}</Text>
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">{LABELS.pay.fieldPaymentDate}</Text>
           <Pressable
             onPress={() => setShowPicker(true)}
-            className="bg-white border border-gray-200 rounded-xl px-4 py-3 active:opacity-70"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 active:opacity-70"
           >
-            <Text className="text-base text-gray-900">{formatDate(toISO(paidAt))}</Text>
+            <Text className="text-base text-gray-900 dark:text-gray-100">{formatDate(toISO(paidAt))}</Text>
           </Pressable>
 
           {showPicker && (
@@ -143,13 +143,13 @@ export default function PayLineScreen() {
 
         {/* Nota opcional */}
         <View className="gap-1.5">
-          <Text className="text-sm font-semibold text-gray-700">
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             {LABELS.pay.fieldNote} <Text className="text-gray-400 font-normal">{LABELS.common.optional}</Text>
           </Text>
           <TextInput
-            className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-gray-100"
             placeholder={LABELS.pay.placeholderNote}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#6b7280"
             value={note}
             onChangeText={(t) => setNote(t.slice(0, 500))}
             multiline
@@ -159,8 +159,8 @@ export default function PayLineScreen() {
         </View>
 
         {error && (
-          <View className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-            <Text className="text-red-600 text-sm">{error}</Text>
+          <View className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+            <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
           </View>
         )}
 
@@ -168,9 +168,9 @@ export default function PayLineScreen() {
         <Pressable
           onPress={handleConfirm}
           disabled={!canConfirm}
-          className={`rounded-xl py-4 items-center ${canConfirm ? "bg-green-600" : "bg-gray-200"} active:opacity-70`}
+          className={`rounded-xl py-4 items-center ${canConfirm ? "bg-green-600" : "bg-gray-200 dark:bg-gray-700"} active:opacity-70`}
         >
-          <Text className={`text-base font-semibold ${canConfirm ? "text-white" : "text-gray-400"}`}>
+          <Text className={`text-base font-semibold ${canConfirm ? "text-white" : "text-gray-400 dark:text-gray-500"}`}>
             {LABELS.pay.confirmButton}
           </Text>
         </Pressable>

@@ -8,12 +8,12 @@ Status legend: ✅ DONE · 🔄 PARTIAL · ❌ MISSING
 
 | Priority | Flow | Status |
 |----------|------|--------|
-| 1 | Period charge generation | ❌ MISSING |
-| 2 | Dashboard — period view with priority ordering | 🔄 PARTIAL |
-| 3 | Contact detail — current status | 🔄 PARTIAL |
-| 4 | Contact payment history | ❌ MISSING |
+| 1 | Period charge generation | 🔄 PARTIAL |
+| 2 | Dashboard — period view with priority ordering | ✅ DONE |
+| 3 | Contact detail — current status | ✅ DONE |
+| 4 | Contact payment history | ✅ DONE |
 | 5 | Edit contact — monthly amount inline | 🔄 PARTIAL |
-| 6 | Settings screen (import/export + dark mode) | ❌ MISSING |
+| 6 | Settings screen (import/export + dark mode) | ✅ DONE |
 | 7 | Add charge to contact | ✅ DONE |
 | 8 | Mark line as paid | ✅ DONE |
 | 9 | Revert payment | ✅ DONE |
@@ -53,7 +53,7 @@ Status legend: ✅ DONE · 🔄 PARTIAL · ❌ MISSING
 
 ---
 
-### Contact detail — current status  🔄 PARTIAL
+### Contact detail — current status  ✅ DONE
 
 1. Operator opens a contact
 2. Sees at a glance whether the contact is up to date or has pending/overdue charges
@@ -64,19 +64,17 @@ Status legend: ✅ DONE · 🔄 PARTIAL · ❌ MISSING
 
 **Tests:** `charges.test.ts` → `listChargesByContact`
 
-**Gap:** The screen currently shows the full charge history. No "up to date / has debt" summary at the top. No navigation link to a separate payment history screen.
-
 ---
 
-### Contact payment history  ❌ MISSING
+### Contact payment history  ✅ DONE
 
-1. From the contact detail, operator taps "Ver historial"
-2. Sees all charges grouped by period (month)
-3. Each period shows its lines and their status
+1. From the contact detail, operator taps "Ver historial completo"
+2. Sees all charges grouped by period (month), most recent first
+3. Each period shows its lines and their status; lines can be paid/reverted inline
 
 **Success:** Operator can review any past period without it cluttering the main contact view
 
-**Tests:** — no tests
+**Tests:** `charges.test.ts` → `listChargesByContact`
 
 ---
 
@@ -97,19 +95,19 @@ Status legend: ✅ DONE · 🔄 PARTIAL · ❌ MISSING
 
 ---
 
-### Period charge generation  ❌ MISSING
+### Period charge generation  🔄 PARTIAL
 
 1. Operator triggers "Generar cobros del mes" for a given period
 2. App creates one charge per contact that has assigned templates
 3. Each assigned template becomes one charge line
 4. Personal template amount comes from `contact_templates.amount`, not from the template default
-5. If a charge for that contact + period already exists, it is skipped
+5. If a charge for that contact + period already exists, it is skipped (idempotent via unique index)
 
 **Success:** All contacts get their charges for the period in one action without duplicates
 
-**Tests:** — no tests
+**Tests:** `charges.test.ts` → `generateChargesForPeriod` (idempotency, amount override)
 
-**Open question:** The current model has no `period` field on `charges` — only `due_date`. A robust period concept needs either a `period` column (e.g. `2026-05`) or a convention (due_date within the month = that period). Needs a decision before implementing.
+**Gap:** `generateChargesForPeriod(period, due_date)` is implemented and tested in `db/charges.ts`, but there is no UI to trigger it. The operator has no way to invoke bulk generation yet.
 
 ---
 
@@ -152,18 +150,16 @@ Runs automatically on dashboard load.
 
 ## Dashboard
 
-### Period view with priority ordering  🔄 PARTIAL
+### Period view with priority ordering  ✅ DONE
 
 1. Operator opens the dashboard
 2. Selects a period (previous month, current month, next month)
 3. Sees charges ordered by priority: overdue first, then pending, then paid
-4. Default view shows overdue + pending only
+4. Default view shows overdue + pending only ("Activos" filter)
 
 **Success:** Operator immediately sees what needs attention without scrolling past paid charges
 
 **Tests:** — no tests for ordering logic
-
-**Gap:** Period filter exists (prev/current/next month). Ordering is implemented. Default view shows all statuses — should default to overdue + pending only. A contact with an unpaid charge from a previous period should surface in the current period view.
 
 ---
 
@@ -235,10 +231,13 @@ Runs automatically on dashboard load.
 
 ---
 
-### Settings screen  ❌ MISSING
+### Settings screen  🔄 PARTIAL
 
-A dedicated Settings tab or screen consolidating:
-- Import / Export (currently a standalone tab)
-- Dark / light mode toggle
+Accessible via gear icon (⚙) in the Dashboard header — slides up as a bottom sheet.
+
+Planned sections:
+- Import / Export — ✅ gear icon → sheet row → importexport screen
+- Dark / light mode toggle — ✅ Switch toggle in sheet, persisted via AsyncStorage, defaults to system preference
+- User profile — ❌ planned for Phase 1B
 
 **Non-goal:** No other settings in Phase 1

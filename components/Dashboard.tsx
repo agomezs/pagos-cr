@@ -8,68 +8,19 @@ import {
   Text,
   View,
 } from "react-native";
-import { markOverdue, getSummary, listCharges , createCharge } from "../db/charges";
-import { listContacts, createContact } from "../db/contacts";
-import { createLine } from "../db/chargeLines";
-import { createTemplate } from "../db/chargeTemplates";
-import { getDb } from "../db/database";
-import { formatColones } from "../lib/format";
+import { markOverdue, getSummary, listCharges, listChargesForPeriod } from "../db/charges";
+import { listContacts } from "../db/contacts";
+import { formatColones, currentPeriod } from "../lib/format";
 import type { Charge, ChargeStatus, Contact, Summary } from "../lib/types";
 import { ChargeCard } from "./dashboard/ChargeCard";
 import { ClientPickerModal } from "./dashboard/ClientPickerModal";
+import { seedIfEmpty } from "./dashboard/seedIfEmpty";
 import { LABELS } from "../constants/labels";
 
 // ---------------------------------------------------------------------------
-// Seed helper — inserts demo data on first run
+// StatusFilter — "active" means overdue + pending combined (default view)
 // ---------------------------------------------------------------------------
-function seedIfEmpty() {
-  const contacts = listContacts();
-  if (contacts.length > 0) return;
-
-  const c1 = { id: "c1", name: "Ana Rodríguez", phone: "88001234", email: null, notes: "Lucas + Clarita", monthly_amount: 380000 };
-  const c2 = { id: "c2", name: "Luis Pérez", phone: "88005678", email: null, notes: null, monthly_amount: 210000 };
-  const c3 = { id: "c3", name: "María Castro", phone: null, email: null, notes: null, monthly_amount: 210000 };
-  createContact(c1);
-  createContact(c2);
-  createContact(c3);
-
-  createTemplate({ id: "t1", concept: "Mensualidad", amount: 210000, type: "recurring" });
-  createTemplate({ id: "t2", concept: "Ballet", amount: 25000, type: "extra" });
-  createTemplate({ id: "t3", concept: "Guardería", amount: 40000, type: "recurring" });
-
-  // May charge: Ana — tuition + ballet
-  createCharge({ id: "ch1", contact_id: "c1", due_date: "2026-05-02" });
-  createLine({ id: "l1", charge_id: "ch1", concept: "Mensualidad mayo", amount: 380000, description: "Lucas + Clarita", type: "recurring" });
-  createLine({ id: "l2", charge_id: "ch1", concept: "Ballet", amount: 25000, description: "Clarita", type: "extra" });
-
-  // May charge: Luis — tuition
-  createCharge({ id: "ch2", contact_id: "c2", due_date: "2026-05-02" });
-  createLine({ id: "l3", charge_id: "ch2", concept: "Mensualidad mayo", amount: 210000, description: null, type: "recurring" });
-
-  // May charge: María — tuition + daycare
-  createCharge({ id: "ch3", contact_id: "c3", due_date: "2026-05-15" });
-  createLine({ id: "l4", charge_id: "ch3", concept: "Mensualidad mayo", amount: 210000, description: null, type: "recurring" });
-  createLine({ id: "l5", charge_id: "ch3", concept: "Guardería mayo", amount: 40000, description: null, type: "recurring" });
-
-  // April charge: Ana — past due
-  createCharge({ id: "ch4", contact_id: "c1", due_date: "2026-04-02" });
-  createLine({ id: "l6", charge_id: "ch4", concept: "Mensualidad abril", amount: 380000, description: "Lucas + Clarita", type: "recurring" });
-
-  // April charge: Luis — already paid
-  createCharge({ id: "ch5", contact_id: "c2", due_date: "2026-04-02" });
-  createLine({ id: "l7", charge_id: "ch5", concept: "Mensualidad abril", amount: 210000, description: null, type: "recurring" });
-
-  const db = getDb();
-  const now = new Date().toISOString();
-  db.runSync(
-    `UPDATE charge_lines SET status='paid', payment_method='sinpe', paid_at='2026-04-03', updated_at=? WHERE id='l7'`,
-    now,
-  );
-  db.runSync(
-    `UPDATE charges SET status='paid', updated_at=? WHERE id='ch5'`,
-    now,
-  );
-}
+type StatusFilter = ChargeStatus | "active" | "all";
 
 // ---------------------------------------------------------------------------
 // SummaryPanel
@@ -89,22 +40,22 @@ function StatCard({ label, count, amount, bg, active, onPress }: StatCardProps) 
   );
 }
 
-function SummaryPanel({ summary, statusFilter, onStatusPress }: { summary: Summary; statusFilter: ChargeStatus | null; onStatusPress: (s: ChargeStatus) => void }) {
+function SummaryPanel({ summary, statusFilter, onStatusPress }: { summary: Summary; statusFilter: StatusFilter; onStatusPress: (s: StatusFilter) => void }) {
   return (
     <View className="px-4 pt-4 pb-2 gap-3">
-      <Text className="text-xl font-bold text-gray-900">{LABELS.dashboard.summaryTitle}</Text>
+      <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">{LABELS.dashboard.summaryTitle}</Text>
       <View className="flex-row gap-3">
         <StatCard label={LABELS.status.pending} count={summary.pendingCount} amount={summary.totalPending} bg="#3b82f6" active={statusFilter === "pending"} onPress={() => onStatusPress("pending")} />
         <StatCard label={LABELS.status.overdue} count={summary.overdueCount} amount={summary.totalOverdue} bg="#ef4444" active={statusFilter === "overdue"} onPress={() => onStatusPress("overdue")} />
       </View>
       <View className="flex-row gap-3">
         <StatCard label={LABELS.status.paid} count={summary.paidCount} amount={summary.totalPaid} bg="#16a34a" active={statusFilter === "paid"} onPress={() => onStatusPress("paid")} />
-        <View className="flex-1 rounded-2xl p-4 bg-gray-100 gap-1 justify-center">
-          <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{LABELS.dashboard.totalReceivable}</Text>
-          <Text className="text-2xl font-bold text-gray-800">
+        <View className="flex-1 rounded-2xl p-4 bg-gray-100 dark:bg-gray-800 gap-1 justify-center">
+          <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{LABELS.dashboard.totalReceivable}</Text>
+          <Text className="text-2xl font-bold text-gray-800 dark:text-gray-100">
             {formatColones(summary.totalPending + summary.totalOverdue)}
           </Text>
-          <Text className="text-xs text-gray-500">
+          <Text className="text-xs text-gray-500 dark:text-gray-400">
             {summary.pendingCount + summary.overdueCount} {(summary.pendingCount + summary.overdueCount) !== 1 ? LABELS.charges.chargePlural : LABELS.charges.chargeSingular}
           </Text>
         </View>
@@ -116,38 +67,48 @@ function SummaryPanel({ summary, statusFilter, onStatusPress }: { summary: Summa
 // ---------------------------------------------------------------------------
 // StatusSegmentedControl
 // ---------------------------------------------------------------------------
-const SEGMENTS: { label: string; value: ChargeStatus | null }[] = [
-  { label: LABELS.dashboard.filterAll,   value: null },
-  { label: LABELS.status.pending,        value: "pending" },
-  { label: LABELS.status.overdue,        value: "overdue" },
-  { label: LABELS.status.paid,           value: "paid" },
+const SEGMENTS: { label: string; value: StatusFilter }[] = [
+  { label: LABELS.dashboard.filterActive,  value: "active" },
+  { label: LABELS.status.overdue,          value: "overdue" },
+  { label: LABELS.status.pending,          value: "pending" },
+  { label: LABELS.status.paid,             value: "paid" },
+  { label: LABELS.dashboard.filterAll,     value: "all" },
 ];
 
-const SEGMENT_ACTIVE_COLOR: Record<string, string> = {
-  "null":    "bg-gray-800",
-  "pending": "bg-blue-600",
-  "overdue": "bg-red-600",
-  "paid":    "bg-green-600",
+const SEGMENT_ACTIVE_COLOR: Record<StatusFilter, string> = {
+  active:  "bg-gray-800 dark:bg-gray-200",
+  all:     "bg-gray-800 dark:bg-gray-200",
+  pending: "bg-blue-600",
+  overdue: "bg-red-600",
+  paid:    "bg-green-600",
+};
+
+const SEGMENT_ACTIVE_TEXT: Record<StatusFilter, string> = {
+  active:  "text-white dark:text-gray-900",
+  all:     "text-white dark:text-gray-900",
+  pending: "text-white",
+  overdue: "text-white",
+  paid:    "text-white",
 };
 
 function StatusSegmentedControl({
   active,
   onChange,
 }: {
-  active: ChargeStatus | null;
-  onChange: (v: ChargeStatus | null) => void;
+  active: StatusFilter;
+  onChange: (v: StatusFilter) => void;
 }) {
   return (
-    <View className="mx-4 mt-3 mb-1 flex-row bg-gray-100 rounded-xl p-1 gap-0.5">
+    <View className="mx-4 mt-3 mb-1 flex-row bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-0.5">
       {SEGMENTS.map((s) => {
         const selected = active === s.value;
         return (
           <Pressable
-            key={String(s.value)}
+            key={s.value}
             onPress={() => onChange(s.value)}
-            className={`flex-1 py-2 items-center rounded-lg active:opacity-70 ${selected ? (SEGMENT_ACTIVE_COLOR[String(s.value)] ?? "bg-gray-800") : ""}`}
+            className={`flex-1 py-2 items-center rounded-lg active:opacity-70 ${selected ? SEGMENT_ACTIVE_COLOR[s.value] : ""}`}
           >
-            <Text className={`text-xs font-semibold ${selected ? "text-white" : "text-gray-500"}`}>
+            <Text className={`text-xs font-semibold ${selected ? SEGMENT_ACTIVE_TEXT[s.value] : "text-gray-500 dark:text-gray-400"}`}>
               {s.label}
             </Text>
           </Pressable>
@@ -160,38 +121,32 @@ function StatusSegmentedControl({
 // ---------------------------------------------------------------------------
 // SecondaryFilterRow
 // ---------------------------------------------------------------------------
-function toISO(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-const QUICK_RANGES: { label: string; from: string; to: string }[] = (() => {
+function periodOffset(offset: number): string {
   const today = new Date();
   const y = today.getFullYear();
-  const mo = today.getMonth();
-  return [
-    { label: LABELS.dashboard.rangePrevMonth, from: toISO(new Date(y, mo - 1, 1)), to: toISO(new Date(y, mo, 0)) },
-    { label: LABELS.dashboard.rangeThisMonth, from: toISO(new Date(y, mo, 1)),     to: toISO(new Date(y, mo + 1, 0)) },
-    { label: LABELS.dashboard.rangeNextMonth, from: toISO(new Date(y, mo + 1, 1)), to: toISO(new Date(y, mo + 2, 0)) },
-  ];
-})();
+  const m = today.getMonth() + 1 + offset;
+  const date = new Date(y, m - 1, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+const PERIOD_CHIPS: { label: string; period: string }[] = [
+  { label: LABELS.dashboard.rangePrevMonth, period: periodOffset(-1) },
+  { label: LABELS.dashboard.rangeThisMonth, period: periodOffset(0) },
+  { label: LABELS.dashboard.rangeNextMonth, period: periodOffset(1) },
+];
 
 function SecondaryFilterRow({
   contactFilter,
-  dateFrom,
-  dateTo,
+  selectedPeriod,
   selectedContact,
   onContactPress,
-  onDateRange,
+  onPeriodChange,
 }: {
   contactFilter: string | null;
-  dateFrom: string | null;
-  dateTo: string | null;
+  selectedPeriod: string;
   selectedContact: Contact | null;
   onContactPress: () => void;
-  onDateRange: (from: string | null, to: string | null) => void;
+  onPeriodChange: (period: string) => void;
 }) {
   return (
     <ScrollView
@@ -203,30 +158,30 @@ function SecondaryFilterRow({
       <Pressable
         onPress={onContactPress}
         className={`flex-row items-center gap-1 px-3.5 py-1.5 rounded-full border ${
-          contactFilter ? "bg-indigo-600 border-indigo-600" : "bg-white border-gray-300"
+          contactFilter ? "bg-indigo-600 border-indigo-600" : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
         } active:opacity-70`}
       >
-        <Text className={`text-sm font-semibold ${contactFilter ? "text-white" : "text-gray-600"}`}>
+        <Text className={`text-sm font-semibold ${contactFilter ? "text-white" : "text-gray-600 dark:text-gray-300"}`}>
           {selectedContact ? selectedContact.name : LABELS.dashboard.filterContact}
         </Text>
-        <Text className={`text-xs ${contactFilter ? "text-white/70" : "text-gray-400"}`}>
+        <Text className={`text-xs ${contactFilter ? "text-white/70" : "text-gray-400 dark:text-gray-500"}`}>
           {contactFilter ? "✕" : "▾"}
         </Text>
       </Pressable>
 
-      {/* Date range chips */}
-      {QUICK_RANGES.map((r) => {
-        const active = dateFrom === r.from && dateTo === r.to;
+      {/* Period chips */}
+      {PERIOD_CHIPS.map((chip) => {
+        const active = selectedPeriod === chip.period;
         return (
           <Pressable
-            key={r.label}
-            onPress={() => onDateRange(active ? null : r.from, active ? null : r.to)}
+            key={chip.period}
+            onPress={() => onPeriodChange(chip.period)}
             className={`px-3.5 py-1.5 rounded-full border ${
-              active ? "bg-gray-900 border-gray-900" : "bg-white border-gray-300"
+              active ? "bg-gray-900 dark:bg-gray-100 border-gray-900 dark:border-gray-100" : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
             } active:opacity-70`}
           >
-            <Text className={`text-sm font-semibold ${active ? "text-white" : "text-gray-600"}`}>
-              {r.label}
+            <Text className={`text-sm font-semibold ${active ? "text-white dark:text-gray-900" : "text-gray-600 dark:text-gray-300"}`}>
+              {chip.label}
             </Text>
           </Pressable>
         );
@@ -249,10 +204,9 @@ export default function Dashboard() {
   });
   const [charges, setCharges] = useState<Charge[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [statusFilter, setStatusFilter] = useState<ChargeStatus | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [contactFilter, setContactFilter] = useState<string | null>(null);
-  const [dateFrom, setDateFrom] = useState<string | null>(null);
-  const [dateTo, setDateTo] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(currentPeriod);
   const [showContactPicker, setShowContactPicker] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -261,8 +215,23 @@ export default function Dashboard() {
   const load = useCallback(() => {
     markOverdue();
     setSummary(getSummary());
-    setCharges(listCharges({ status: statusFilter, contact_id: contactFilter, date_from: dateFrom, date_to: dateTo }));
-  }, [statusFilter, contactFilter, dateFrom, dateTo]);
+
+    const thisPeriod = currentPeriod();
+    // For the current period use listChargesForPeriod so unpaid past charges are included.
+    // For other periods use listCharges scoped to that period.
+    const all: Charge[] = selectedPeriod === thisPeriod
+      ? listChargesForPeriod(selectedPeriod)
+      : listCharges({ period: selectedPeriod });
+
+    const filtered = all.filter((c) => {
+      if (contactFilter && c.contact_id !== contactFilter) return false;
+      if (statusFilter === "active") return c.status === "overdue" || c.status === "pending";
+      if (statusFilter === "all") return true;
+      return c.status === statusFilter;
+    });
+
+    setCharges(filtered);
+  }, [statusFilter, contactFilter, selectedPeriod]);
 
   useEffect(() => {
     seedIfEmpty();
@@ -271,13 +240,13 @@ export default function Dashboard() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const onRefresh = useCallback(async () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
-    await load();
+    load();
     setRefreshing(false);
   }, [load]);
 
-  const hasFilters = statusFilter !== null || contactFilter !== null || dateFrom !== null || dateTo !== null;
+  const hasFilters = statusFilter !== "active" || contactFilter !== null || selectedPeriod !== currentPeriod();
 
   return (
     <View className="flex-1">
@@ -289,19 +258,18 @@ export default function Dashboard() {
         <SummaryPanel
           summary={summary}
           statusFilter={statusFilter}
-          onStatusPress={(s) => setStatusFilter(statusFilter === s ? null : s)}
+          onStatusPress={(s) => setStatusFilter(statusFilter === s ? "active" : s)}
         />
 
         {/* Sticky filter area */}
-        <View className="bg-gray-50 border-b border-gray-100 pb-1">
+        <View className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 pb-1">
           <StatusSegmentedControl active={statusFilter} onChange={setStatusFilter} />
           <SecondaryFilterRow
             contactFilter={contactFilter}
-            dateFrom={dateFrom}
-            dateTo={dateTo}
+            selectedPeriod={selectedPeriod}
             selectedContact={selectedContact}
             onContactPress={() => contactFilter ? setContactFilter(null) : setShowContactPicker(true)}
-            onDateRange={(from, to) => { setDateFrom(from); setDateTo(to); }}
+            onPeriodChange={setSelectedPeriod}
           />
         </View>
 
@@ -309,13 +277,12 @@ export default function Dashboard() {
         <View className="pt-3 pb-24">
           {hasFilters && (
             <View className="px-4 pb-2 flex-row items-center justify-between">
-              <Text className="text-xs text-gray-400">{charges.length} {charges.length !== 1 ? LABELS.charges.resultPlural : LABELS.charges.resultSingular}</Text>
+              <Text className="text-xs text-gray-400 dark:text-gray-500">{charges.length} {charges.length !== 1 ? LABELS.charges.resultPlural : LABELS.charges.resultSingular}</Text>
               <Pressable
                 onPress={() => {
-                  setStatusFilter(null);
+                  setStatusFilter("active");
                   setContactFilter(null);
-                  setDateFrom(null);
-                  setDateTo(null);
+                  setSelectedPeriod(currentPeriod());
                 }}
                 className="active:opacity-70"
               >
@@ -327,8 +294,8 @@ export default function Dashboard() {
           {charges.length === 0 ? (
             <View className="items-center py-16 gap-2">
               <Text className="text-4xl">📋</Text>
-              <Text className="text-base font-medium text-gray-500">{LABELS.charges.emptyFiltered}</Text>
-              <Text className="text-sm text-gray-400">
+              <Text className="text-base font-medium text-gray-500 dark:text-gray-400">{LABELS.charges.emptyFiltered}</Text>
+              <Text className="text-sm text-gray-400 dark:text-gray-500">
                 {hasFilters ? LABELS.charges.emptyFilteredMessage : LABELS.charges.emptyInitialMessage}
               </Text>
             </View>
