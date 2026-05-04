@@ -3,7 +3,7 @@ import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import ScreenHeader from "../../../components/ScreenHeader";
 import FloatingActionButton from "../../../components/FloatingActionButton";
-import { getContact, deactivateContact } from "../../../db/contacts";
+import { getContact } from "../../../db/contacts";
 import { listChargesByContactInPeriod, refreshChargeStatus } from "../../../db/charges";
 import { unmarkLinePaid } from "../../../db/chargeLines";
 import { formatColones, formatDate, currentPeriod } from "../../../lib/format";
@@ -196,24 +196,6 @@ export default function ContactDetailScreen() {
     );
   }
 
-  function handleDelete() {
-    Alert.alert(
-      LABELS.contacts.deleteAlertTitle,
-      LABELS.contacts.deleteAlertMessage(contact?.name ?? ""),
-      [
-        { text: LABELS.common.cancel, style: "cancel" },
-        {
-          text: LABELS.common.delete,
-          style: "destructive",
-          onPress: () => {
-            deactivateContact(id);
-            router.back();
-          },
-        },
-      ],
-    );
-  }
-
   if (!contact) return null;
 
   return (
@@ -275,13 +257,6 @@ export default function ContactDetailScreen() {
           )}
         </View>
 
-        {/* Danger zone */}
-        <Pressable
-          onPress={handleDelete}
-          className="rounded-xl py-4 items-center border border-red-200 dark:border-red-800 active:opacity-70"
-        >
-          <Text className="text-red-500 text-base font-semibold">{LABELS.contacts.deleteButton}</Text>
-        </Pressable>
       </ScrollView>
 
       {/* FAB — new charge */}

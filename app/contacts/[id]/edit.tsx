@@ -11,8 +11,9 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ScreenHeader from "../../../components/ScreenHeader";
-import { getContact, updateContact } from "../../../db/contacts";
+import { getContact, updateContact, deactivateContact } from "../../../db/contacts";
 import { LABELS } from "../../../constants/labels";
+import DestructiveDialog from "../../../components/alert/DestructiveDialog";
 
 export default function EditContactScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -155,10 +156,20 @@ export default function EditContactScreen() {
             {LABELS.common.saveChanges}
           </Text>
         </Pressable>
+
+        {/* Eliminar */}
+        <DestructiveDialog
+          trigger={LABELS.contacts.deleteButton}
+          title={LABELS.contacts.deleteAlertTitle}
+          message={LABELS.contacts.deleteAlertMessage(name)}
+          confirmLabel={LABELS.contacts.deleteButton}
+          onConfirm={() => { deactivateContact(id); router.dismiss(2); }}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
 
 const styles = StyleSheet.create({
   notesInput: { minHeight: 80 },
