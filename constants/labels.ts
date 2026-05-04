@@ -153,6 +153,7 @@ export const LABELS = {
     tab: 'Tablero',
     summaryTitle: 'Resumen',
     filterAll: 'Todos',
+    filterActive: 'Activos',
     filterContact: 'Contacto',
     rangePrevMonth: 'Mes ant.',
     rangeThisMonth: 'Este mes',

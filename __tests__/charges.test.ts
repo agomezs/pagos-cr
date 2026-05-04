@@ -2,6 +2,7 @@ import {
   getSummary,
   createCharge,
   markOverdue,
+  listCharges,
   listChargesByContact,
   listChargesForPeriod,
   listChargesByContactInPeriod,
@@ -85,6 +86,64 @@ describe('createCharge', () => {
   });
 });
 
+describe('listCharges', () => {
+  const charge = { id: 'ch-1', contact_id: 'co-1', contact_name: 'Ana', period: '2026-05', due_date: '2026-05-01', status: 'pending', created_at: '', updated_at: '' };
+  const line = { id: 'l-1', charge_id: 'ch-1', concept: 'Mensualidad', amount: 35000, type: 'recurring', status: 'pending', description: null, payment_method: null, paid_at: null, created_at: '', updated_at: '' };
+
+  it('returns charges with their lines', () => {
+    mockGetAllSync
+      .mockReturnValueOnce([charge])
+      .mockReturnValueOnce([line]);
+    const result = listCharges();
+    expect(result).toHaveLength(1);
+    expect(result[0].lines).toHaveLength(1);
+  });
+
+  it('passes period filter arg to SQL when provided', () => {
+    mockGetAllSync.mockReturnValue([]);
+    listCharges({ period: '2026-05' });
+    const [sql, ...args] = mockGetAllSync.mock.calls[0];
+    expect(sql).toContain('c.period = ?');
+    expect(args).toContain('2026-05');
+  });
+
+  it('passes null period args when period is not provided (no period filter)', () => {
+    mockGetAllSync.mockReturnValue([]);
+    listCharges();
+    const args = mockGetAllSync.mock.calls[0];
+    // period placeholder appears twice (? IS NULL OR c.period = ?)
+    const nullCount = args.filter((a: unknown) => a === null).length;
+    expect(nullCount).toBeGreaterThanOrEqual(2);
+  });
+
+  it('passes status filter arg to SQL when provided', () => {
+    mockGetAllSync.mockReturnValue([]);
+    listCharges({ status: 'overdue' });
+    const args = mockGetAllSync.mock.calls[0];
+    expect(args).toContain('overdue');
+  });
+
+  it('passes contact_id filter arg to SQL when provided', () => {
+    mockGetAllSync.mockReturnValue([]);
+    listCharges({ contact_id: 'co-1' });
+    const args = mockGetAllSync.mock.calls[0];
+    expect(args).toContain('co-1');
+  });
+
+  it('SQL orders overdue before pending before paid in the ORDER BY clause', () => {
+    mockGetAllSync.mockReturnValue([]);
+    listCharges();
+    const [sql] = mockGetAllSync.mock.calls[0];
+    const orderBy = sql.slice(sql.toUpperCase().indexOf('ORDER BY'));
+    const overduePos = orderBy.indexOf("'overdue'");
+    const pendingPos = orderBy.indexOf("'pending'");
+    const paidPos   = orderBy.indexOf("'paid'");
+    expect(overduePos).toBeGreaterThan(-1);
+    expect(pendingPos).toBeGreaterThan(overduePos);
+    expect(paidPos).toBeGreaterThan(pendingPos);
+  });
+});
+
 describe('listChargesByContact', () => {
   it('returns charges with their lines for a given contact', () => {
     const charge = { id: 'ch-1', contact_id: 'co-1', contact_name: 'Ana', period: '2026-05', due_date: '2026-05-01', status: 'pending', created_at: '', updated_at: '' };
@@ -136,6 +195,27 @@ describe('listChargesForPeriod', () => {
     expect(result[0].period).toBe('2026-05');
     expect(result[0].lines).toHaveLength(1);
   });
+
+  it('SQL orders overdue before pending before paid in the ORDER BY clause', () => {
+    mockGetAllSync.mockReturnValue([]);
+    listChargesForPeriod('2026-05');
+    const [sql] = mockGetAllSync.mock.calls[0];
+    const orderBy = sql.slice(sql.toUpperCase().indexOf('ORDER BY'));
+    const overduePos = orderBy.indexOf("'overdue'");
+    const pendingPos = orderBy.indexOf("'pending'");
+    const paidPos   = orderBy.indexOf("'paid'");
+    expect(overduePos).toBeGreaterThan(-1);
+    expect(pendingPos).toBeGreaterThan(overduePos);
+    expect(paidPos).toBeGreaterThan(pendingPos);
+  });
+
+  it('excludes paid charges from past periods', () => {
+    mockGetAllSync.mockReturnValue([]);
+    listChargesForPeriod('2026-05');
+    const [sql] = mockGetAllSync.mock.calls[0];
+    // Past-period condition must exclude paid
+    expect(sql).toContain("status != 'paid'");
+  });
 });
 
 describe('listChargesByContactInPeriod', () => {
@@ -161,6 +241,31 @@ describe('markOverdue', () => {
     expect(sql).toContain("status = 'overdue'");
     expect(sql).toContain("status = 'pending'");
     expect(sql).toContain("due_date < date('now')");
+  });
+
+  it('only targets recurring lines, not extra lines', () => {
+    mockGetAllSync.mockReturnValue([]);
+    markOverdue();
+    const [sql] = mockRunSync.mock.calls[0];
+    expect(sql).toContain("type = 'recurring'");
+  });
+
+  it('syncs charge status for each stale charge returned by the second query', () => {
+    // First getAllSync returns stale charges; each triggers a runSync for syncChargeStatus
+    mockGetAllSync.mockReturnValueOnce([{ id: 'ch-1' }, { id: 'ch-2' }]);
+    markOverdue();
+    // 1 UPDATE for lines + 2 UPDATE for syncChargeStatus
+    expect(mockRunSync).toHaveBeenCalledTimes(3);
+    const statusUpdateSqls = mockRunSync.mock.calls.slice(1).map(([sql]: [string]) => sql);
+    for (const sql of statusUpdateSqls) {
+      expect(sql).toContain('UPDATE charges SET status');
+    }
+  });
+
+  it('does not call syncChargeStatus when no stale charges exist', () => {
+    mockGetAllSync.mockReturnValueOnce([]);
+    markOverdue();
+    expect(mockRunSync).toHaveBeenCalledTimes(1);
   });
 });
 

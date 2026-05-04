@@ -9,7 +9,7 @@ Status legend: ✅ DONE · 🔄 PARTIAL · ❌ MISSING
 | Priority | Flow | Status |
 |----------|------|--------|
 | 1 | Period charge generation | 🔄 PARTIAL |
-| 2 | Dashboard — period view with priority ordering | 🔄 PARTIAL |
+| 2 | Dashboard — period view with priority ordering | ✅ DONE |
 | 3 | Contact detail — current status | ✅ DONE |
 | 4 | Contact payment history | ✅ DONE |
 | 5 | Edit contact — monthly amount inline | 🔄 PARTIAL |
@@ -150,18 +150,16 @@ Runs automatically on dashboard load.
 
 ## Dashboard
 
-### Period view with priority ordering  🔄 PARTIAL
+### Period view with priority ordering  ✅ DONE
 
 1. Operator opens the dashboard
 2. Selects a period (previous month, current month, next month)
 3. Sees charges ordered by priority: overdue first, then pending, then paid
-4. Default view shows overdue + pending only
+4. Default view shows overdue + pending only ("Activos" filter)
 
 **Success:** Operator immediately sees what needs attention without scrolling past paid charges
 
 **Tests:** — no tests for ordering logic
-
-**Gap:** Default view shows overdue + pending for current period + unpaid past charges. Ordering is implemented. The default status filter could be narrowed to overdue + pending only (currently shows all).
 
 ---
 
